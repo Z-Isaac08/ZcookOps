@@ -1,0 +1,52 @@
+{
+  "common": {
+    "readMore": "Read writeup",
+    "date": "Published date",
+    "difficulty": "Difficulty level",
+    "tags": "Tags",
+    "backToTop": "Back to top",
+    "author": "Author"
+  },
+  "nav": {
+    "home": "Dashboard",
+    "ctf": "CTF Writeups",
+    "pentest": "Pentest Labs",
+    "network": "Network Labs",
+    "walkthroughs": "Methodology"
+  },
+  "home": {
+    "hero": {
+      "title": "ZcookOps — Cyber Security Repository",
+      "description": "Technical explorations, lab reports, and threat analysis by ZCo0k. Cybersecurity & AI Master's student, focused on infrastructure and offensive security."
+    },
+    "categories": {
+      "title": "Operation Sectors",
+      "ctf": {
+        "title": "CTF & Challenges",
+        "description": "Detailed analysis of Capture The Flag competitions and training platforms."
+      },
+      "pentest": {
+        "title": "Pentest Labs",
+        "description": "Intrusion reports on target machines (HTB, THM) and vulnerable environments."
+      },
+      "network": {
+        "title": "Infrastructure & Network",
+        "description": "Architecture, virtualization, and securing of complex networks."
+      },
+      "walkthroughs": {
+        "title": "Methodology & Guides",
+        "description": "In-depth tutorials on tools, protocols, and cyber best practices."
+      }
+    }
+  },
+  "about": {
+    "title": "About the author",
+    "description1": "Hi ! I'm ZCo0k. Currently a Cybersecurity & AI Master's student at ESATIC, I spend my free time exploring protocols, virtualizing complex networks, and studying modern attack vectors.",
+    "description2": "This blog is my technical logbook: a space where I document my labs, my RFC readings, and my adventures in the world of offensive security.",
+    "skills": {
+      "infra": "Infrastructure",
+      "pentest": "Pentest",
+      "ai": "AI & Cyber"
+    }
+  }
+}

@@ -1,0 +1,78 @@
+---
+title: "Lab Réseau : Mécanismes d'Adressage IPv4 & IPv6"
+date: "2026-03-10"
+tags: ["Réseau", "IPv4", "IPv6", "DHCP", "SLAAC", "Wireshark"]
+category: "network-labs"
+lang: "fr"
+description: "Étude comparative et analyse protocolaire des mécanismes d'adressage automatique : DHCPv4 (Stateful) vs SLAAC IPv6 (Stateless)."
+difficulty: "medium"
+---
+
+## Objectifs du Lab
+
+Ce laboratoire regroupe des expérimentations réalisées en environnement virtualisé pour documenter les mécanismes d'adressage automatique. L'objectif est de comprendre en profondeur les échanges réseau en les observant paquet par paquet.
+
+### Méthodologie "Deep Dive"
+
+Chaque lab suit un processus rigoureux :
+1. **Configuration** : Mise en place de l'infrastructure (Serveur/Routeur + Client).
+2. **Capture** : Observation des échanges via `tcpdump` ou `Wireshark`.
+3. **Analyse** : Décorticage des paquets couche par couche (Modèle OSI).
+4. **Validation** : Vérification de la cohérence entre la théorie (RFC) et la pratique.
+
+---
+
+## 1. DHCP IPv4 (RFC 2131)
+
+Le protocole DHCP permet une attribution centralisée des adresses IP. Le processus se décompose en 4 étapes clés, souvent retenues sous l'acronyme **DORA**.
+
+### Le processus DORA :
+- **Discover** : Le client cherche un serveur DHCP (Broadcast).
+- **Offer** : Le serveur propose une adresse IP.
+- **Request** : Le client demande officiellement l'adresse proposée.
+- **ACK** : Le serveur confirme l'attribution et transmet les options (DNS, Gateway).
+
+```bash
+# Exemple de configuration simple (dhcpd.conf)
+subnet 192.168.56.0 netmask 255.255.255.0 {
+  range 192.168.56.100 192.168.56.200;
+  option routers 192.168.56.1;
+  option domain-name-servers 192.168.56.10;
+}
+```
+
+---
+
+## 2. SLAAC IPv6 (RFC 4862)
+
+Contrairement à l'IPv4, l'IPv6 permet une autoconfiguration **Stateless** (SLAAC) sans serveur DHCP, en s'appuyant sur le protocole **ICMPv6**.
+
+### Étapes clés de SLAAC :
+1. **Router Solicitation (RS)** : Le client demande des informations sur le préfixe réseau au routeur.
+2. **Router Advertisement (RA)** : Le routeur répond avec le préfixe (ex: `2001:db8::/64`).
+3. **Génération d'adresse** : Le client génère sa propre adresse (via **EUI-64** ou **Privacy Extensions**).
+4. **Duplicate Address Detection (DAD)** : Le client vérifie que l'adresse n'est pas déjà utilisée.
+
+> [!TIP]
+> En IPv6, le mécanisme **Neighbor Discovery Protocol (NDP)** remplace avantageusement le protocole ARP de l'IPv4.
+
+---
+
+## 3. Analyse de Paquets (Wireshark)
+
+L'utilisation de `tshark` ou `Wireshark` permet de confirmer que les drapeaux (flags) du protocole sont correctement positionnés.
+
+### Exemple de filtre Wireshark pour IPv6 :
+```text
+icmpv6.type == 134 || icmpv6.type == 133
+```
+*Affiche uniquement les messages Router Advertisement et Router Solicitation.*
+
+---
+
+## Conclusion
+
+Ce lab démontre la puissance de l'analyse protocolaire. Comprendre comment une machine obtient son adresse est la base fondamentale pour tout expert en réseau ou en cybersécurité.
+
+---
+*Writeup rédigé par **ZCo0k**.*

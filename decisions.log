@@ -1,0 +1,49 @@
+# ZcookOps — Decisions Log
+
+---
+
+## 2026-04-29 — Project Initialization & Stack Selection
+
+**Task:** Initialize the ZcookOps project — define stack, structure, and agent system.
+**Decision:** Next.js 15 (App Router) + TypeScript (relaxed) + Tailwind v4 + shadcn/ui. Content via local MDX files. Bilingual FR/EN. Dark mode default.
+**Alternatives considered:**
+- Vite + React (rejected: no SSG/SSR, weaker for content-heavy sites)
+- Pages Router (rejected: App Router is the current Next.js standard)
+- Headless CMS (rejected: local MDX is simpler for now, CMS can be added later)
+- Tailwind v3 (rejected: user chose v4)
+**Reasoning:** User is familiar with Next.js from previous projects (Coreline Alliance). MDX keeps content in the repo with no external dependencies. shadcn/ui provides a clean, modern component base that matches the desired aesthetic.
+**Status:** Active
+
+---
+
+## 2026-04-29 — Content Organization by Type
+
+**Task:** Decide how to organize writeup content.
+**Decision:** Organize by type (CTF, Pentest Labs, Network Labs, Walkthroughs) rather than by platform.
+**Alternatives considered:**
+- By platform + year like 0xb0b.gitbook.io (rejected: network labs are self-hosted, not tied to a platform)
+- Both dimensions as filterable (rejected: adds complexity without clear need yet)
+**Reasoning:** User's content doesn't always map to a specific platform. Type-based organization is more natural for the content mix.
+**Status:** Active
+
+---
+
+## 2026-04-29 — Site Name
+
+**Task:** Decide on the public-facing site name.
+**Decision:** ZcookOps — kept as-is.
+**Alternatives considered:** None seriously — the name is memorable, has personality, and the "Ops" suffix ties to cybersecurity.
+**Reasoning:** User liked it. It works.
+**Status:** Active
+
+---
+
+## 2026-04-29 — Visual Identity
+
+**Task:** Define the visual direction.
+**Decision:** Clean modern dark mode in the style of Vercel docs / shadcn.
+**Alternatives considered:**
+- Hacker aesthetic with terminal greens and monospace (rejected: user preferred clean modern)
+- Custom design direction (not specified)
+**Reasoning:** Clean and professional. shadcn/ui already provides this baseline. Less custom work needed.
+**Status:** Active

@@ -1,0 +1,159 @@
+---
+title: "Déploiement d'un Contrôleur de Domaine sous Debian 12 (Linux ADDS)"
+date: '2026-02-15'
+tags: ['Linux', 'Debian', 'OpenLDAP', 'BIND9', 'DHCP', 'SSSD', 'Active Directory']
+category: 'network-labs'
+lang: 'fr'
+description: 'Guide complet pour mettre en place une infrastructure de gestion centralisée des identités et services réseau sous Debian 12 avec OpenLDAP, BIND9, et SSSD.'
+difficulty: 'hard'
+---
+
+## Introduction
+
+Dans les infrastructures informatiques modernes, la gestion centralisée des utilisateurs, des machines et des services réseau est essentielle pour garantir la sécurité et l'efficacité du système d'information.
+
+Ce projet consiste à mettre en place un **contrôleur de domaine sous Debian 12 (Bookworm)** dans un environnement virtualisé. L’objectif est de déployer une infrastructure capable de centraliser l’authentification et la gestion des identités.
+
+### Architecture Cible
+
+L'architecture repose sur un serveur principal nommé `dc1.lab.local`.
+
+| Paramètre            | Valeur             |
+| :------------------- | :----------------- |
+| **OS**               | Debian 12 Bookworm |
+| **Adresse IP**       | 192.168.56.10 / 24 |
+| **Domaine LDAP**     | `dc=lab,dc=local`  |
+| **DNS**              | BIND9              |
+| **DHCP**             | isc-dhcp-server    |
+| **Annuaire**         | OpenLDAP (slapd)   |
+| **Authentification** | SSSD + NSS + PAM   |
+
+> [!NOTE]
+> L'infrastructure est déployée sous VMware Workstation avec des cartes réseau en mode **Host-Only** pour isoler le lab.
+
+---
+
+## 1. Mise en place de l'infrastructure
+
+### 1.1 Installation de Debian 12
+
+Le serveur est installé en mode **Headless** (sans environnement graphique) pour optimiser les ressources.
+
+#### Partitionnement recommandé :
+
+- `/` : 9,3 GB (ext4)
+- `/var` : 4,7 GB (ext4 - stockage des logs et données LDAP)
+- `[SWAP]` : 1,9 GB
+- `/backup` : 4,2 GB (ext4 - dédié aux sauvegardes)
+
+### 1.2 Configuration Réseau
+
+Il est crucial de fixer l'adresse IP pour un contrôleur de domaine.
+
+```bash
+# Editer /etc/network/interfaces
+auto ens34
+iface ens34 inet static
+    address 192.168.56.10
+    netmask 255.255.255.0
+```
+
+> [!CAUTION]
+> Ne définissez pas de passerelle sur l'interface interne (Host-Only) si vous avez une interface NAT active, pour éviter les conflits de routage.
+
+---
+
+## 2. Services Réseau de Base
+
+### 2.1 DNS avec BIND9
+
+Le DNS doit être configuré avant LDAP car ce dernier s'appuie sur la résolution du FQDN du serveur.
+
+#### Configuration des zones (`/etc/bind/named.conf.local`) :
+
+```bind
+zone "lab.local" {
+    type master;
+    file "/etc/bind/zones/db.lab.local";
+};
+
+zone "56.168.192.in-addr.arpa" {
+    type master;
+    file "/etc/bind/zones/db.192.168.56";
+};
+```
+
+### 2.2 DHCP avec ISC-DHCP-Server
+
+Le serveur DHCP distribue les adresses IP ainsi que l'adresse du DNS (`192.168.56.10`) aux clients du domaine.
+
+---
+
+## 3. Annuaire OpenLDAP
+
+OpenLDAP constitue le cœur de l'infrastructure. Il stocke les objets (utilisateurs, groupes, machines) organisés en un arbre hiérarchique appelé **DIT (Directory Information Tree)**.
+
+### 3.1 Structure du DIT
+
+La structure mise en place est la suivante :
+
+- `ou=Users` : Utilisateurs du domaine
+- `ou=Groups` : Groupes (ex: admins, users)
+- `ou=Computers` : Machines enregistrées
+
+### 3.2 Sécurisation via les ACL
+
+Il est impératif de restreindre l'accès aux attributs sensibles comme `userPassword`.
+
+```ldif
+# Exemple d'ACL (acl.ldif)
+olcAccess: {0}to attrs=userPassword
+    by self write
+    by anonymous auth
+    by dn="cn=admin,dc=lab,dc=local" write
+    by * none
+```
+
+---
+
+## 4. Intégration Linux avec SSSD
+
+**SSSD (System Security Services Daemon)** fait le pont entre le système d'exploitation et l'annuaire LDAP. Il permet aux utilisateurs de l'annuaire de se connecter sur n'importe quelle machine Linux du parc.
+
+### Flux d'authentification :
+
+1. L'utilisateur tente une connexion (SSH ou console).
+2. **PAM** intercepte la demande.
+3. **SSSD** interroge OpenLDAP.
+4. Si valide, la connexion est autorisée et le répertoire `/home` est créé automatiquement via `pam_mkhomedir`.
+
+---
+
+## 5. Sécurisation SSH
+
+Pour protéger le contrôleur de domaine, nous appliquons un durcissement sur `sshd_config` :
+
+- Changement du port par défaut (ex: `2222`).
+- Interdiction de la connexion `root` directe.
+- Restriction de l'accès aux seuls groupes LDAP autorisés via `AllowGroups`.
+
+---
+
+## 6. Maintenance et Sauvegarde
+
+Une stratégie de sauvegarde est mise en place sur la partition `/backup`. Un script automatisé via **cron** exporte quotidiennement la base LDAP au format **LDIF** via la commande `slapcat`.
+
+```bash
+# Export de la base
+slapcat -v -l /backup/ldap/ldap_$(date +%Y%m%d).ldif
+```
+
+---
+
+## Conclusion
+
+Ce projet démontre qu'il est possible de construire une infrastructure de type **Contrôleur de Domaine Linux** performante et sécurisée en utilisant exclusivement des solutions Open Source. Cette architecture offre une alternative solide et flexible aux solutions propriétaires pour la gestion centralisée d'un parc informatique.
+
+---
+
+_Writeup rédigé par **ZCo0k**._

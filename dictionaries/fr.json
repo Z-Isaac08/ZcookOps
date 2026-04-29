@@ -1,0 +1,52 @@
+{
+  "common": {
+    "readMore": "Lire le writeup",
+    "date": "Date de publication",
+    "difficulty": "Niveau de difficulté",
+    "tags": "Tags",
+    "backToTop": "Retour en haut",
+    "author": "Auteur"
+  },
+  "nav": {
+    "home": "Dashboard",
+    "ctf": "CTF Writeups",
+    "pentest": "Pentest Labs",
+    "network": "Network Labs",
+    "walkthroughs": "Methodology"
+  },
+  "home": {
+    "hero": {
+      "title": "ZcookOps — Cyber Security Repository",
+      "description": "Explorations techniques, rapports de laboratoires et analyses de menaces par ZCo0k. Étudiant en Master Cybersécurité & IA, passionné par l'infrastructure et l'offensive security."
+    },
+    "categories": {
+      "title": "Secteurs d'Opérations",
+      "ctf": {
+        "title": "CTF & Challenges",
+        "description": "Analyses détaillées de compétitions Capture The Flag et plateformes d'entraînement."
+      },
+      "pentest": {
+        "title": "Pentest Labs",
+        "description": "Rapports d'intrusion sur machines cibles (HTB, THM) et environnements vulnérables."
+      },
+      "network": {
+        "title": "Infrastructure & Réseau",
+        "description": "Architecture, virtualisation et sécurisation de réseaux complexes."
+      },
+      "walkthroughs": {
+        "title": "Méthodologie & Guides",
+        "description": "Tutoriels approfondis sur les outils, les protocoles et les bonnes pratiques cyber."
+      }
+    }
+  },
+  "about": {
+    "title": "À propos de l'auteur",
+    "description1": "Salut ! Moi c'est ZCo0k. Actuellement étudiant en Master Cybersécurité & IA à l'ESATIC, je consacre mon temps libre à l'exploration des protocoles, à l'apprentissage de la cybersécurité offensive, à la virtualisation de réseaux complexes et à l'étude des vecteurs d'attaque modernes.",
+    "description2": "Ce blog est mon carnet de bord technique : un espace où je documente mes laboratoires, mes lectures et mes aventures dans le monde de l'offensive security.",
+    "skills": {
+      "infra": "Infrastructure",
+      "pentest": "Pentest",
+      "ai": "IA & Cyber"
+    }
+  }
+}
