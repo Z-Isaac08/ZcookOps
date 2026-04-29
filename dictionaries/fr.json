@@ -16,8 +16,8 @@
   },
   "home": {
     "hero": {
-      "title": "ZcookOps — Cyber Security Repository",
-      "description": "Explorations techniques, rapports de laboratoires et analyses de menaces par ZCo0k. Étudiant en Master Cybersécurité & IA, passionné par l'infrastructure et l'offensive security."
+      "title": "ZcookOps | Cyber Security Repository",
+      "description": "Explorations techniques, rapports de laboratoires et analyses de menaces par **Zcook**. Étudiant en Master Cybersécurité & IA, passionné par l'infrastructure et l'offensive security."
     },
     "categories": {
       "title": "Secteurs d'Opérations",
@@ -41,8 +41,8 @@
   },
   "about": {
     "title": "À propos de l'auteur",
-    "description1": "Salut ! Moi c'est ZCo0k. Actuellement étudiant en Master Cybersécurité & IA à l'ESATIC, je consacre mon temps libre à l'exploration des protocoles, à l'apprentissage de la cybersécurité offensive, à la virtualisation de réseaux complexes et à l'étude des vecteurs d'attaque modernes.",
-    "description2": "Ce blog est mon carnet de bord technique : un espace où je documente mes laboratoires, mes lectures et mes aventures dans le monde de l'offensive security.",
+    "description1": "Salut ! Moi c'est **Zcook**. Actuellement étudiant en Master Cybersécurité & IA à l'ESATIC, je consacre mon temps libre à l'exploration des protocoles, à la virtualisation de réseaux complexes et à l'étude des vecteurs d'attaque modernes.",
+    "description2": "Ce blog est mon carnet de bord technique : un espace où je documente mes laboratoires, mes lectures de RFC et mes aventures dans le monde de l'offensive security.",
     "skills": {
       "infra": "Infrastructure",
       "pentest": "Pentest",
