@@ -1,0 +1,123 @@
+---
+title: "Projet Cisco Packet Tracer : Réseau d'Entreprise Multi-Sites"
+date: "2026-05-01"
+tags: ["Cisco", "Packet Tracer", "OSPF", "BGP", "IPSec", "VLAN", "QoS"]
+category: "network-labs"
+lang: "fr"
+description: "Conception et implémentation d'une infrastructure réseau d'entreprise complète et sécurisée sur Cisco Packet Tracer, intégrant routage dynamique, VPN IPSec et haute disponibilité."
+difficulty: "hard"
+---
+
+## Contexte et Objectifs du Projet
+
+L'entreprise fictive **NexaGroup SA** est une société de services numériques en pleine expansion. Elle dispose d'un **siège social** à Paris, de deux **agences régionales** (Lyon et Bordeaux) et d'un **datacenter privé** hébergeant ses services critiques.
+
+L'objectif principal de ce projet est de concevoir, implémenter et documenter une infrastructure réseau d'entreprise complète, robuste et sécurisée sous **Cisco Packet Tracer**, en mettant en œuvre des technologies avancées :
+
+- **Segmentation** : VLANs et routage inter-VLAN.
+- **Routage dynamique** : OSPF multi-area et BGP eBGP.
+- **Sécurité** : Tunnels VPN IPSec Site-to-Site et ACL étendues.
+- **Services** : DHCP, DNS autoritatif, NAT/PAT.
+- **Disponibilité & QoS** : STP (Rapid PVST+), HSRP et QoS DSCP.
+
+---
+
+## Architecture Globale du Réseau
+
+Le réseau est organisé en **4 sites interconnectés**. La topologie suit un modèle hiérarchique :
+
+1. **Siège (Paris)** : Hub central (Couches Core / Distribution / Access).
+2. **Agence Lyon** : Site secondaire (Couches Distribution / Access).
+3. **Agence Bordeaux** : Site secondaire (Couches Distribution / Access).
+4. **Datacenter** : Hébergement des services critiques.
+
+![Topologie Globale du Réseau](/images/multi-sites-1.png)
+
+> [!NOTE]
+> Les liens WAN sont simulés par des interfaces Serial (HDLC/PPP) ou des tunnels GRE/IPSec pour relier les différents sites de manière sécurisée.
+
+---
+
+## Plan d'Adressage IP
+
+Le plan d'adressage utilise des plages **RFC 1918** avec un découpage **VLSM** rigoureux. La plage publique simulée pour le NAT est `203.0.113.0/24` (TEST-NET-3).
+
+| Site / VLAN | Nom VLAN | Réseau | Passerelle |
+| :--- | :--- | :--- | :--- |
+| **Siège** — VLAN 10 | Management | 10.0.10.0/24 | 10.0.10.1 |
+| **Siège** — VLAN 20 | Informatique | 10.0.20.0/24 | 10.0.20.1 |
+| **Siège** — VLAN 30 | RH | 10.0.30.0/24 | 10.0.30.1 |
+| **Lyon** — VLAN 11 | Management | 10.1.11.0/24 | 10.1.11.1 |
+| **Bordeaux** — VLAN 12 | Management | 10.2.12.0/24 | 10.2.12.1 |
+| **Datacenter** — VLAN 100| Serveurs | 10.10.100.0/24 | 10.10.100.1 |
+
+---
+
+## Spécifications Techniques Détaillées
+
+### 1. VLANs & Routage Inter-VLAN
+
+Le routage inter-VLAN est implémenté via **Router-on-a-Stick** sur les routeurs de bordure et via des **interfaces SVI** sur les switches L3.
+Pour éviter les attaques de type *VLAN hopping*, le VLAN natif a été configuré sur le **VLAN 99** (non-défaut). VTP version 3 est activé au siège pour faciliter la propagation des VLANs.
+
+### 2. Routage Dynamique : OSPF Multi-Area & BGP
+
+**OSPF version 2** est déployé sur le réseau interne avec une segmentation en aires :
+- **Area 0 (Backbone)** : Liens WAN entre les routeurs de cœur.
+- **Area 1, 2, 3** : Réseaux internes du Siège, Lyon et Bordeaux.
+
+L'authentification **MD5** est activée sur toutes les adjacences OSPF pour la sécurité.
+
+![Configuration OSPF / BGP](/images/multi-sites-2.png)
+
+Pour simuler la connexion Internet, **BGP eBGP** est configuré entre le routeur de bordure du siège (AS 65001) et un routeur ISP simulé (AS 65000), avec annonce du préfixe public et filtrage des routes.
+
+### 3. VPN Site-to-Site IPSec
+
+Des tunnels **VPN IPSec (IKEv1/IKEv2)** sont établis entre le siège et chaque agence.
+- **Chiffrement** : AES-256
+- **Intégrité** : SHA-256 (HMAC)
+- **Authentification** : Pre-shared key
+
+Le trafic inter-sites transite exclusivement par ces tunnels, garantissant la confidentialité des échanges.
+
+### 4. Sécurité Réseau : ACL Avancées & Port-Security
+
+Des **ACL étendues nommées** sont appliquées stratégiquement (en entrée sur les interfaces sources) :
+- `ACL_INTER_VLAN` : Interdit l'accès au réseau Finance depuis les RH/Commerciaux.
+- `ACL_WAN_IN` : Bloque les IP privées (RFC 1918) entrantes depuis le WAN (anti-spoofing).
+- `ACL_VPN_BYPASS` : Autorise le trafic VPN chiffré et bloque le trafic en clair.
+
+La fonctionnalité **Port-Security** est activée sur les ports d'accès (limite de 2 adresses MAC, mode *restrict*).
+
+![Sécurité et ACLs](/images/multi-sites-3.png)
+
+### 5. Services Réseau : DHCP, DNS & NAT
+
+- **DHCP Centralisé** : Le serveur DHCP est hébergé au datacenter. Les switches de distribution utilisent `ip helper-address` pour relayer les requêtes DHCP des clients.
+- **DNS Autoritatif** : Un serveur DNS au datacenter gère les zones internes (`nexagroup.local`) et externes (`nexagroup.com`).
+- **NAT / PAT** : Du NAT dynamique (Overload) est configuré pour l'accès Internet des utilisateurs, et du NAT statique expose le serveur Web de la DMZ (`10.0.50.10` -> `203.0.113.10`).
+
+### 6. Haute Disponibilité : STP & HSRP
+
+Pour garantir la résilience du réseau :
+- **Rapid PVST+** est déployé avec une configuration explicite des ponts racines (Load Balancing). Les ports d'accès utilisent `PortFast` et `BPDU Guard`.
+- **HSRP version 2** est configuré sur les paires de switches L3 de distribution (Siège et Datacenter). Une fonctionnalité de *tracking* d'interface diminue la priorité HSRP si le lien WAN tombe, forçant le basculement.
+
+### 7. Qualité de Service (QoS)
+
+Une politique **MQC (Modular QoS CLI)** protège les flux critiques sur les liens WAN :
+- **VoIP (EF)** : File d'attente prioritaire (Priority Queue - 30%).
+- **Données critiques (AF41)** : CBWFQ (25%).
+- **Trafic standard** : Best Effort.
+
+![Validation des Tests](/images/multi-sites-4.png)
+
+---
+
+## Conclusion et Validation
+
+Ce projet complet sous Cisco Packet Tracer valide la maîtrise des concepts fondamentaux et avancés de l'ingénierie réseau. Les scénarios de tests ont confirmé la connectivité de bout en bout, le basculement en cas de panne (HSRP/STP) et la sécurisation des flux (IPSec/ACL).
+
+---
+*Writeup rédigé par **ZCo0k**.*
