@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { getWriteup } from '@/lib/content';
-import { Locale } from '@/lib/i18n';
+import { Locale, getDictionary } from '@/lib/i18n';
 import { notFound } from 'next/navigation';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import { Calendar, Tag } from 'lucide-react';
@@ -19,6 +19,7 @@ export default async function WriteupPage({
     slug: string;
   };
   const writeup = getWriteup(category, slug);
+  const dict = await getDictionary(lang);
 
   if (!writeup) {
     notFound();
@@ -32,7 +33,11 @@ export default async function WriteupPage({
           <header className="mb-12 border-b pb-8">
             <div className="flex flex-wrap items-center gap-4 mb-6">
               <Badge variant="secondary" className="uppercase">
-                {writeup.metadata.category.replace('-', ' ')}
+                {category === 'ctf' ? dict.nav.ctf 
+                  : category === 'pentest-labs' ? dict.nav.pentest
+                  : category === 'network-labs' ? dict.nav.network
+                  : category === 'walkthroughs' ? dict.nav.walkthroughs
+                  : category.replace('-', ' ')}
               </Badge>
               {writeup.metadata.difficulty && (
                 <Badge>{writeup.metadata.difficulty}</Badge>

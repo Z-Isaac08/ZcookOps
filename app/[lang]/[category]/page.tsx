@@ -19,11 +19,26 @@ export default async function CategoryPage({
     notFound();
   }
 
+  const categoryTitles: Record<string, string> = {
+    'ctf': dict.nav.ctf,
+    'pentest-labs': dict.nav.pentest,
+    'network-labs': dict.nav.network,
+    'walkthroughs': dict.nav.walkthroughs,
+  };
+
   return (
     <main className="container mx-auto px-4 py-12 grow">
       <div className="mb-12">
-        <h1 className="text-4xl font-bold mb-4 capitalize">{category.replace('-', ' ')}</h1>
-        <p className="text-muted-foreground text-lg">{writeups.length} writeups disponibles.</p>
+        <h1 className="text-4xl font-bold mb-4">{categoryTitles[category]}</h1>
+        <p className="text-muted-foreground text-lg">{writeups.length} {lang === 'fr' ? 'articles disponibles' : 'articles available'}.</p>
+        
+        {lang === 'en' && writeups.length > 0 && (
+          <div className="mt-4 p-3 bg-muted/50 border border-border rounded-lg block w-full text-center">
+            <span className="text-sm text-muted-foreground">
+              <strong className="text-foreground">Note:</strong> All writeups and lab reports are currently only available in French.
+            </span>
+          </div>
+        )}
       </div>
 
       {writeups.length === 0 ? (

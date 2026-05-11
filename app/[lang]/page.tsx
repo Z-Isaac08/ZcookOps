@@ -1,3 +1,4 @@
+import React from 'react';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getDictionary, Locale } from '@/lib/i18n';
 import { BookOpen, Network, Shield, Terminal } from 'lucide-react';
@@ -30,20 +31,34 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
     },
   ];
 
-  const renderBoldText = (text: string) => {
-    const parts = text.split(/(\*\*.*?\*\*)/g);
-    return parts.map((part, i) => {
-      if (part.startsWith('**') && part.endsWith('**')) {
-        return (
-          <span
-            key={i}
-            className="text-foreground font-bold underline decoration-primary/30 underline-offset-4"
-          >
-            {part.slice(2, -2)}
-          </span>
-        );
-      }
-      return part;
+  const renderFormattedText = (text: string) => {
+    return text.split('\n').map((line, lineIndex, arr) => {
+      const parts = line.split(/(\*\*.*?\*\*|_.*?_)/g);
+      return (
+        <React.Fragment key={lineIndex}>
+          {parts.map((part, i) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+              return (
+                <span
+                  key={i}
+                  className="text-foreground font-bold underline decoration-primary/30 underline-offset-4"
+                >
+                  {part.slice(2, -2)}
+                </span>
+              );
+            }
+            if (part.startsWith('_') && part.endsWith('_')) {
+              return (
+                <em key={i} className="italic text-foreground/80">
+                  {part.slice(1, -1)}
+                </em>
+              );
+            }
+            return part;
+          })}
+          {lineIndex < arr.length - 1 && <br />}
+        </React.Fragment>
+      );
     });
   };
 
@@ -54,7 +69,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
           {dict.home.hero.title}
         </h1>
         <p className="text-xl text-muted-foreground">
-          {renderBoldText(dict.home.hero.description)}
+          {renderFormattedText(dict.home.hero.description)}
         </p>
       </div>
 
@@ -83,8 +98,8 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
           <div className="space-y-6 text-center md:text-left">
             <h2 className="text-3xl font-bold tracking-tight">{dict.about.title}</h2>
             <div className="space-y-4 text-muted-foreground leading-relaxed">
-              <p className="text-lg">{renderBoldText(dict.about.description1)}</p>
-              <p className="text-lg">{renderBoldText(dict.about.description2)}</p>
+              <p className="text-lg">{renderFormattedText(dict.about.description1)}</p>
+              <p className="text-lg">{renderFormattedText(dict.about.description2)}</p>
             </div>
             <div className="flex flex-wrap justify-center md:justify-start gap-3">
               <div className="px-4 py-2 rounded-lg bg-muted text-muted-foreground text-sm font-medium border border-border/50">

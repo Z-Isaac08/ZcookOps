@@ -16,8 +16,8 @@
   },
   "home": {
     "hero": {
-      "title": "ZNote | Cyber Security Repository",
-      "description": "Explorations techniques, rapports de laboratoires et analyses de menaces par **Zcook**. Étudiant en Master Cybersécurité & IA, passionné par l'infrastructure et l'offensive security."
+      "title": "ZNote - Write the IP, Get the Shell",
+      "description": "_« L'IP dont le nom est écrit dans cette note verra son shell pop. »_ \n\nExplorations techniques, rapports de laboratoires et analyses de menaces par **Zcook**. Étudiant en Master Cybersécurité & IA, passionné par l'infrastructure et l'offensive security."
     },
     "categories": {
       "title": "Secteurs d'Opérations",
@@ -26,7 +26,7 @@
         "description": "Analyses détaillées de compétitions Capture The Flag et plateformes d'entraînement."
       },
       "pentest": {
-        "title": "Pentest Labs",
+        "title": "Labs Pentest",
         "description": "Rapports d'intrusion sur machines cibles (HTB, THM) et environnements vulnérables."
       },
       "network": {
@@ -34,7 +34,7 @@
         "description": "Architecture, virtualisation et sécurisation de réseaux complexes."
       },
       "walkthroughs": {
-        "title": "Hors-Piste",
+        "title": "Hors-Log",
         "description": "Tutoriels approfondis sur les outils, les protocoles et les bonnes pratiques cyber."
       }
     }
@@ -42,7 +42,7 @@
   "about": {
     "title": "À propos de l'auteur",
     "description1": "Salut ! Moi c'est **Zcook**. Actuellement étudiant en Master Cybersécurité & IA à l'ESATIC, je consacre mon temps libre à l'exploration des protocoles, à la virtualisation de réseaux complexes et à l'étude des vecteurs d'attaque modernes.",
-    "description2": "Ce blog est mon carnet de bord technique : un espace où je documente mes laboratoires, mes lectures de RFC et mes aventures dans le monde de l'offensive security.",
+    "description2": "Ce blog est mon carnet de bord technique : un espace où je documente mes laboratoires, mes délires et mes aventures dans le monde de l'offensive security.",
     "skills": {
       "infra": "Infrastructure",
       "pentest": "Pentest",
