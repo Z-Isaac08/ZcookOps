@@ -1,4 +1,4 @@
-# GEMINI.md — ZcookOps
+# GEMINI.md — ZNote
 
 Project-specific behavioral guidelines. Every agent, every task, every line of code follows these rules.
 
@@ -6,7 +6,7 @@ Project-specific behavioral guidelines. Every agent, every task, every line of c
 
 ## Project Context
 
-**ZcookOps** is a personal cybersecurity writeups site — not a portfolio. It publishes walkthroughs and writeups for CTF challenges, pentest labs, network virtualized labs, and other cybersecurity work.
+**ZNote** is a personal cybersecurity writeups site — not a portfolio. It publishes walkthroughs and writeups for CTF challenges, pentest labs, network virtualized labs, and other cybersecurity work.
 
 **Stack:** Next.js 15 (App Router) · TypeScript (relaxed) · Tailwind CSS v4 · shadcn/ui  
 **Content:** Local `.mdx` files in the repo (no CMS)  

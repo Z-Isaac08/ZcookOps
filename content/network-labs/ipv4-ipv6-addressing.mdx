@@ -1,78 +1,637 @@
 ---
-title: "Lab Réseau : Mécanismes d'Adressage IPv4 & IPv6"
-date: "2026-03-10"
-tags: ["Réseau", "IPv4", "IPv6", "DHCP", "SLAAC", "Wireshark"]
-category: "network-labs"
-lang: "fr"
-description: "Étude comparative et analyse protocolaire des mécanismes d'adressage automatique : DHCPv4 (Stateful) vs SLAAC IPv6 (Stateless)."
-difficulty: "medium"
+title: "Lab Réseau : Mécanismes d'Adressage Automatique IPv4 & IPv6"
+date: '2026-03-10'
+tags:
+  [
+    'Réseau',
+    'IPv4',
+    'IPv6',
+    'DHCP',
+    'SLAAC',
+    'ICMPv6',
+    'NDP',
+    'Wireshark',
+    'tshark',
+    'RFC 2131',
+    'RFC 4862',
+  ]
+category: 'network-labs'
+lang: 'fr'
+description: "Étude comparative et analyse protocolaire des mécanismes d'adressage automatique : DHCPv4 (RFC 2131) stateful vs SLAAC IPv6 (RFC 4862) stateless — configuration, capture réseau et analyse paquet par paquet couche par couche."
+difficulty: 'easy'
 ---
 
-## Objectifs du Lab
+## Contexte & Objectifs
 
-Ce laboratoire regroupe des expérimentations réalisées en environnement virtualisé pour documenter les mécanismes d'adressage automatique. L'objectif est de comprendre en profondeur les échanges réseau en les observant paquet par paquet.
+Ce laboratoire documente deux mécanismes d'adressage automatique — **DHCPv4** et **SLAAC IPv6** — observés en environnement virtualisé. L'approche est expérimentale : chaque protocole est configuré, capturé sur le réseau, puis analysé paquet par paquet. L'objectif n'est pas de "faire fonctionner" un protocole, mais de **comprendre chaque échange réseau sous-jacent** et de relier la configuration logicielle aux trames réellement échangées.
 
-### Méthodologie "Deep Dive"
+### Environnement
 
-Chaque lab suit un processus rigoureux :
-1. **Configuration** : Mise en place de l'infrastructure (Serveur/Routeur + Client).
-2. **Capture** : Observation des échanges via `tcpdump` ou `Wireshark`.
-3. **Analyse** : Décorticage des paquets couche par couche (Modèle OSI).
-4. **Validation** : Vérification de la cohérence entre la théorie (RFC) et la pratique.
+| Composant           | Détail                                   |
+| ------------------- | ---------------------------------------- |
+| **Hyperviseur**     | VMware Workstation                       |
+| **Mode réseau**     | Host-Only (réseau isolé)                 |
+| **Serveur/Routeur** | Ubuntu Server 24.04 LTS                  |
+| **Client**          | Windows 10                               |
+| **Réseau IPv4**     | `192.168.171.0/24`                       |
+| **Outils capture**  | `tshark`, `Wireshark`, `tcpdump`         |
+| **Services**        | `isc-dhcp-server` (DHCP), `radvd` (IPv6) |
+
+### Méthodologie commune
+
+```
+1. CONFIGURATION  →  Infrastructure (serveur + client)
+2. CAPTURE        →  Observation des échanges (tshark)
+3. ANALYSE        →  Décorticage couche par couche (OSI)
+4. VALIDATION     →  Théorie (RFC) ↔ Pratique (paquets)
+```
 
 ---
 
-## 1. DHCP IPv4 (RFC 2131)
+## Partie 1 — DHCP IPv4 (RFC 2131)
 
-Le protocole DHCP permet une attribution centralisée des adresses IP. Le processus se décompose en 4 étapes clés, souvent retenues sous l'acronyme **DORA**.
+### Qu'est-ce que DHCP ?
 
-### Le processus DORA :
-- **Discover** : Le client cherche un serveur DHCP (Broadcast).
-- **Offer** : Le serveur propose une adresse IP.
-- **Request** : Le client demande officiellement l'adresse proposée.
-- **ACK** : Le serveur confirme l'attribution et transmet les options (DNS, Gateway).
+DHCP (Dynamic Host Configuration Protocol, RFC 2131) est un protocole **client-serveur stateful** permettant l'attribution automatique d'une configuration réseau complète : adresse IP, masque, passerelle, DNS, durée de bail. Il repose sur **UDP** (ports 67 côté serveur, 68 côté client) et utilise le **broadcast** pour la découverte initiale.
+
+**Stateful** signifie que le serveur maintient un état — il enregistre qui a quelle adresse, quand le bail expire, et gère un pool centralisé. C'est sa principale différence avec SLAAC.
+
+---
+
+### 1.1 Configuration du Serveur DHCP
+
+#### Installation
 
 ```bash
-# Exemple de configuration simple (dhcpd.conf)
-subnet 192.168.56.0 netmask 255.255.255.0 {
-  range 192.168.56.100 192.168.56.200;
-  option routers 192.168.56.1;
-  option domain-name-servers 192.168.56.10;
+sudo apt update
+sudo apt install -y isc-dhcp-server
+```
+
+Définir l'interface d'écoute :
+
+```bash
+sudo nano /etc/default/isc-dhcp-server
+```
+
+```bash
+INTERFACESv4="ens33"    # Interface connectée au réseau interne
+```
+
+#### Configuration dhcpd.conf
+
+```bash
+sudo nano /etc/dhcp/dhcpd.conf
+```
+
+```bash
+# Paramètres globaux
+default-lease-time 600;       # Bail par défaut : 10 minutes
+max-lease-time 7200;          # Bail maximum : 2 heures
+authoritative;                # Ce serveur fait autorité sur ce réseau
+
+# Sous-réseau géré
+subnet 192.168.171.0 netmask 255.255.255.0 {
+    range 192.168.171.100 192.168.171.200;      # Pool d'adresses dynamiques
+    option routers 192.168.171.1;               # Passerelle par défaut
+    option subnet-mask 255.255.255.0;           # Masque transmis au client
+    option domain-name-servers 8.8.8.8, 8.8.4.4; # DNS fournis
+    option broadcast-address 192.168.171.255;   # Adresse de broadcast
+}
+```
+
+**Explication des directives clés :**
+
+| Directive                    | Rôle                                                                 |
+| ---------------------------- | -------------------------------------------------------------------- |
+| `authoritative`              | Le serveur répond avec DHCPNAK si un client demande une IP hors pool |
+| `default-lease-time`         | Durée avant que le client renouvelle le bail (timer T1 = 50%)        |
+| `max-lease-time`             | Durée maximum accordée si le client en demande plus                  |
+| `range`                      | Plage d'adresses dynamiques disponibles dans le pool                 |
+| `option routers`             | Option 3 DHCP — passerelle transmise au client                       |
+| `option domain-name-servers` | Option 6 DHCP — serveurs DNS transmis au client                      |
+
+#### Démarrage et vérification
+
+```bash
+sudo systemctl restart isc-dhcp-server
+sudo systemctl enable isc-dhcp-server
+sudo systemctl status isc-dhcp-server
+```
+
+```
+● isc-dhcp-server.service - ISC DHCP IPv4 server
+     Loaded: loaded (/lib/systemd/system/isc-dhcp-server.service)
+     Active: active (running) since...
+```
+
+---
+
+### 1.2 Le Processus DORA — Théorie
+
+DORA est l'acronyme des 4 messages qui constituent une attribution DHCP complète. Voici leur rôle et leurs caractéristiques protocolaires :
+
+```
+CLIENT                                          SERVEUR
+  │                                                │
+  │──── DHCPDISCOVER ─────────────────────────────▶│
+  │    (broadcast — "quelqu'un peut m'aider ?")    │
+  │                                                │
+  │◀─── DHCPOFFER ─────────────────────────────────│
+  │    (unicast ou broadcast — "je t'offre X.X.X.X")│
+  │                                                │
+  │──── DHCPREQUEST ──────────────────────────────▶│
+  │    (broadcast — "j'accepte l'offre du serveur Y")│
+  │                                                │
+  │◀─── DHCPACK ───────────────────────────────────│
+  │    (confirmation + options réseau complètes)   │
+  │                                                │
+```
+
+| Message      | Direction        | IP Src        | IP Dst            | Ethernet Dst        |
+| ------------ | ---------------- | ------------- | ----------------- | ------------------- |
+| DHCPDISCOVER | Client → Serveur | `0.0.0.0`     | `255.255.255.255` | `FF:FF:FF:FF:FF:FF` |
+| DHCPOFFER    | Serveur → Client | IP du serveur | `255.255.255.255` | `FF:FF:FF:FF:FF:FF` |
+| DHCPREQUEST  | Client → Serveur | `0.0.0.0`     | `255.255.255.255` | `FF:FF:FF:FF:FF:FF` |
+| DHCPACK      | Serveur → Client | IP du serveur | IP offerte        | MAC du client       |
+
+> [!NOTE]
+> Le client utilise `0.0.0.0` comme IP source car il n'a pas encore d'adresse. Il utilise le broadcast IP `255.255.255.255` et le broadcast Ethernet `FF:FF:FF:FF:FF:FF` car il ne connaît pas l'adresse MAC du serveur. C'est le comportement exact défini par la RFC 2131, Section 4.1.
+
+---
+
+### 1.3 Capture et Analyse des Paquets DORA
+
+#### Démarrer la capture
+
+Sur le serveur, avant que le client se connecte :
+
+```bash
+sudo tshark -i ens33 -f "udp port 67 or udp port 68" -w dhcp_handshake.pcap
+```
+
+```bash
+# Pour voir en temps réel sans sauvegarder :
+sudo tshark -i ens33 -f "udp port 67 or udp port 68"
+```
+
+Sur le client Windows, forcer un renouvellement DHCP :
+
+```cmd
+ipconfig /release
+ipconfig /renew
+```
+
+#### Output tshark
+
+```
+  1 0.000000000 0.0.0.0             → 255.255.255.255  DHCP 342 DHCP Discover - Transaction ID 0x3c4e1a2b
+  2 0.001423000 192.168.171.1       → 255.255.255.255  DHCP 590 DHCP Offer    - Transaction ID 0x3c4e1a2b
+  3 0.002810000 0.0.0.0             → 255.255.255.255  DHCP 374 DHCP Request  - Transaction ID 0x3c4e1a2b
+  4 0.004233000 192.168.171.1       → 192.168.171.100  DHCP 590 DHCP ACK      - Transaction ID 0x3c4e1a2b
+```
+
+**Ce qu'on observe :**
+
+- Tous les messages partagent le même **Transaction ID** (`0x3c4e1a2b`) — c'est le mécanisme d'association requête/réponse de RFC 2131. Si plusieurs serveurs répondent simultanément, le client peut filtrer les offres par ce Transaction ID.
+- Le DHCPACK final est envoyé en **unicast** vers `192.168.171.100` (l'adresse attribuée) — le serveur connaît maintenant la MAC du client.
+
+#### Analyse couche par couche du DHCPDISCOVER
+
+```
+Frame 1: 342 bytes
+│
+├── Ethernet II
+│   ├── Dst: FF:FF:FF:FF:FF:FF  ← broadcast Ethernet (couche 2)
+│   ├── Src: 00:0C:29:XX:XX:XX  ← MAC du client (VMware)
+│   └── Type: IPv4 (0x0800)
+│
+├── Internet Protocol (IPv4)
+│   ├── Src: 0.0.0.0            ← pas encore d'IP (RFC 2131)
+│   ├── Dst: 255.255.255.255    ← broadcast IP (couche 3)
+│   └── Protocol: UDP (17)
+│
+├── User Datagram Protocol (UDP)
+│   ├── Src Port: 68            ← port client DHCP
+│   └── Dst Port: 67            ← port serveur DHCP
+│
+└── Dynamic Host Configuration Protocol (Discover)
+    ├── Message type: Boot Request (1)
+    ├── Client MAC: 00:0C:29:XX:XX:XX
+    ├── Transaction ID: 0x3c4e1a2b
+    ├── Client IP: 0.0.0.0
+    └── Options:
+        ├── Option 53 (DHCP Message Type): DHCPDISCOVER
+        ├── Option 55 (Parameter Request List): [subnet mask, routers, DNS...]
+        └── Option 61 (Client Identifier): [MAC address]
+```
+
+#### Analyse du DHCPACK — Les options transmises
+
+```
+Dynamic Host Configuration Protocol (ACK)
+├── Message type: Boot Reply (2)
+├── Your IP: 192.168.171.100    ← adresse attribuée au client
+├── Server IP: 192.168.171.1    ← IP du serveur DHCP
+├── Transaction ID: 0x3c4e1a2b  ← même ID que le Discover
+└── Options:
+    ├── Option 53: DHCPACK
+    ├── Option 1  (Subnet Mask): 255.255.255.0
+    ├── Option 3  (Router): 192.168.171.1
+    ├── Option 6  (DNS Servers): 8.8.8.8, 8.8.4.4
+    ├── Option 51 (Lease Time): 600 secondes
+    ├── Option 58 (Renewal Time T1): 300 s  ← 50% du bail
+    └── Option 59 (Rebinding Time T2): 525 s ← 87.5% du bail
+```
+
+> [!NOTE]
+> **T1 et T2 expliqués :** À T1 (50% du bail), le client tente de renouveler en **unicast** directement auprès du serveur. Si le serveur ne répond pas, le client attend T2 (87.5%) puis tente en **broadcast** pour trouver n'importe quel serveur DHCP disponible. Cette mécanique de fallback est définie en RFC 2131, Section 4.4.5.
+
+#### Filtres Wireshark utiles
+
+```
+# Voir uniquement les messages DHCP
+udp.port == 67 || udp.port == 68
+
+# Filtrer par type de message
+dhcp.option.dhcp == 1    # DHCPDISCOVER
+dhcp.option.dhcp == 2    # DHCPOFFER
+dhcp.option.dhcp == 3    # DHCPREQUEST
+dhcp.option.dhcp == 5    # DHCPACK
+
+# Suivre un échange complet par Transaction ID
+dhcp.id == 0x3c4e1a2b
+```
+
+#### Vérification côté client Windows
+
+```cmd
+ipconfig /all
+```
+
+```
+Ethernet adapter :
+   DHCP Enabled. . . . . . . . . . . : Yes
+   Autoconfiguration Enabled . . . . : Yes
+   IPv4 Address. . . . . . . . . . . : 192.168.171.100
+   Subnet Mask . . . . . . . . . . . : 255.255.255.0
+   Default Gateway . . . . . . . . . : 192.168.171.1
+   DHCP Server . . . . . . . . . . . : 192.168.171.1
+   DNS Servers . . . . . . . . . . . : 8.8.8.8
+                                       8.8.4.4
+   Lease Obtained. . . . . . . . . . : [date]
+   Lease Expires . . . . . . . . . . : [date + 10 min]
+```
+
+#### Vérification des baux côté serveur
+
+```bash
+cat /var/lib/dhcp/dhcpd.leases
+```
+
+```
+lease 192.168.171.100 {
+  starts 2 2026/03/10 14:30:00;
+  ends   2 2026/03/10 14:40:00;
+  binding state active;
+  next binding state free;
+  hardware ethernet 00:0c:29:xx:xx:xx;
+  client-hostname "DESKTOP-WIN10";
 }
 ```
 
 ---
 
-## 2. SLAAC IPv6 (RFC 4862)
+## Partie 2 — SLAAC IPv6 (RFC 4862)
 
-Contrairement à l'IPv4, l'IPv6 permet une autoconfiguration **Stateless** (SLAAC) sans serveur DHCP, en s'appuyant sur le protocole **ICMPv6**.
+### Qu'est-ce que SLAAC ?
 
-### Étapes clés de SLAAC :
-1. **Router Solicitation (RS)** : Le client demande des informations sur le préfixe réseau au routeur.
-2. **Router Advertisement (RA)** : Le routeur répond avec le préfixe (ex: `2001:db8::/64`).
-3. **Génération d'adresse** : Le client génère sa propre adresse (via **EUI-64** ou **Privacy Extensions**).
-4. **Duplicate Address Detection (DAD)** : Le client vérifie que l'adresse n'est pas déjà utilisée.
+SLAAC (Stateless Address Autoconfiguration, RFC 4862) est le mécanisme d'autoconfiguration **sans serveur** d'IPv6. Le client génère lui-même son adresse complète à partir du **préfixe fourni par le routeur** et de son **identifiant d'interface** (dérivé de sa MAC ou généré aléatoirement). Aucune base de données centrale, aucun bail — d'où le terme **stateless**.
 
-> [!TIP]
-> En IPv6, le mécanisme **Neighbor Discovery Protocol (NDP)** remplace avantageusement le protocole ARP de l'IPv4.
+SLAAC repose entièrement sur **ICMPv6** (RFC 4861) et le protocole **Neighbor Discovery (NDP)**, qui remplace ARP en IPv6.
 
 ---
 
-## 3. Analyse de Paquets (Wireshark)
+### 2.1 Configuration du Routeur IPv6 (radvd)
 
-L'utilisation de `tshark` ou `Wireshark` permet de confirmer que les drapeaux (flags) du protocole sont correctement positionnés.
+#### Installation
 
-### Exemple de filtre Wireshark pour IPv6 :
-```text
-icmpv6.type == 134 || icmpv6.type == 133
+```bash
+sudo apt install -y radvd
 ```
-*Affiche uniquement les messages Router Advertisement et Router Solicitation.*
+
+Activer le forwarding IPv6 sur le serveur :
+
+```bash
+sudo sysctl -w net.ipv6.conf.all.forwarding=1
+# Rendre permanent :
+echo "net.ipv6.conf.all.forwarding=1" | sudo tee -a /etc/sysctl.conf
+```
+
+#### Configuration radvd.conf
+
+```bash
+sudo nano /etc/radvd.conf
+```
+
+```bash
+interface ens33
+{
+    AdvSendAdvert on;           # Activer l'envoi de Router Advertisements
+    MinRtrAdvInterval 30;       # Intervalle minimum entre RA : 30s
+    MaxRtrAdvInterval 100;      # Intervalle maximum entre RA : 100s
+
+    prefix 2001:db8::/64        # Préfixe annoncé aux clients
+    {
+        AdvOnLink on;           # Ce préfixe est sur le lien local
+        AdvAutonomous on;       # Les clients peuvent s'autoconfigurer (SLAAC)
+        AdvRouterAddr on;       # L'adresse du routeur est incluse
+        AdvValidLifetime 3600;  # Durée de validité de l'adresse : 1h
+        AdvPreferredLifetime 1800; # Durée préférée : 30min
+    };
+};
+```
+
+**Les flags `M` et `O` du Router Advertisement :**
+
+| Flag | Nom     | Valeur | Signification                                       |
+| ---- | ------- | ------ | --------------------------------------------------- |
+| `M`  | Managed | 0      | SLAAC actif — le client se configure seul           |
+| `M`  | Managed | 1      | DHCPv6 stateful — le client demande une IP à DHCPv6 |
+| `O`  | Other   | 0      | Pas d'info supplémentaire via DHCPv6                |
+| `O`  | Other   | 1      | Client doit consulter DHCPv6 pour le DNS uniquement |
+
+Dans notre config : `M=0, O=0` → SLAAC pur.
+
+```bash
+sudo systemctl restart radvd
+sudo systemctl enable radvd
+```
+
+---
+
+### 2.2 Le Processus SLAAC — Théorie
+
+```
+CLIENT                                          ROUTEUR
+  │                                                │
+  │  [Génération d'une adresse Link-Local]         │
+  │  fe80::xxxx (basée sur MAC)                    │
+  │                                                │
+  │──── Router Solicitation (RS) ─────────────────▶│
+  │    ICMPv6 type 133                              │
+  │    Src: fe80::xxxx (link-local)                 │
+  │    Dst: ff02::2 (all-routers multicast)         │
+  │                                                │
+  │◀─── Router Advertisement (RA) ─────────────────│
+  │    ICMPv6 type 134                              │
+  │    Src: fe80::routeur                           │
+  │    Dst: ff02::1 (all-nodes multicast)           │
+  │    Préfixe: 2001:db8::/64                       │
+  │    Flags M=0, O=0 (SLAAC)                      │
+  │                                                │
+  │  [Génération de l'adresse globale]              │
+  │  2001:db8:: + Interface ID (EUI-64 ou random)  │
+  │                                                │
+  │──── Neighbor Solicitation (NS) ───────────────▶│
+  │    ICMPv6 type 135 — DAD                        │
+  │    "Cette adresse est-elle déjà utilisée ?"     │
+  │                                                │
+  │  [Si pas de réponse après 1s → adresse validée]│
+  │  Adresse globale ACTIVE                         │
+```
+
+**Les 4 types de messages ICMPv6 du Neighbor Discovery :**
+
+| Type ICMPv6 | Message                     | Rôle                                       |
+| ----------- | --------------------------- | ------------------------------------------ |
+| 133         | Router Solicitation (RS)    | Client demande les infos réseau au routeur |
+| 134         | Router Advertisement (RA)   | Routeur diffuse le préfixe + flags M/O     |
+| 135         | Neighbor Solicitation (NS)  | Résolution MAC (remplace ARP) + DAD        |
+| 136         | Neighbor Advertisement (NA) | Réponse à NS (résolution MAC + DAD)        |
+
+---
+
+### 2.3 Génération d'Adresse — EUI-64 vs Privacy Extensions
+
+#### Méthode EUI-64 (RFC 4291)
+
+Le client construit son identifiant d'interface (64 bits) à partir de sa MAC (48 bits) :
+
+```
+MAC :     00:0C:29:AB:CD:EF
+           ↓ insertion de FF:FE au milieu
+EUI-64 :  00:0C:29:FF:FE:AB:CD:EF
+           ↓ inversion du bit U/L (7ème bit)
+           02:0C:29:FF:FE:AB:CD:EF
+
+Adresse complète : 2001:db8:: + 020c:29ff:feab:cdef
+                   2001:db8:0:0:020c:29ff:feab:cdef
+```
+
+> [!WARNING]
+> **Problème de vie privée d'EUI-64 :** L'identifiant d'interface révèle la MAC de la machine et donc le fabricant. Il est **stable** — la même machine aura toujours la même adresse sur le même réseau. Cela permet le tracking. C'est pourquoi RFC 4941 (Privacy Extensions) a été introduit.
+
+#### Méthode Privacy Extensions (RFC 4941)
+
+Au lieu d'EUI-64, le client génère un identifiant d'interface **aléatoire** qui change périodiquement. Activé par défaut sur Windows et les Linux modernes.
+
+```bash
+# Vérifier l'état des Privacy Extensions sur Linux :
+sysctl net.ipv6.conf.ens33.use_tempaddr
+# 2 = Privacy Extensions activées (recommandé)
+```
+
+---
+
+### 2.4 Capture et Analyse des Paquets SLAAC
+
+#### Démarrer la capture
+
+```bash
+sudo tshark -i ens33 -f "icmp6" -w slaac_handshake.pcap
+```
+
+```bash
+# Voir en temps réel :
+sudo tshark -i ens33 -f "icmp6"
+```
+
+#### Output tshark
+
+```
+  1 0.000000 fe80::a00:27ff:fe00:1 → ff02::2       ICMPv6 70  Router Solicitation
+  2 0.001234 fe80::1               → ff02::1        ICMPv6 126 Router Advertisement
+  3 0.050000 ::                    → ff02::1:ff00:2 ICMPv6 86  Neighbor Solicitation  [DAD]
+  4 1.051000 fe80::200:ff:fe00:2   → ff02::1        ICMPv6 86  Neighbor Advertisement
+```
+
+#### Analyse couche par couche du Router Solicitation
+
+```
+Frame 1: 70 bytes
+│
+├── Ethernet II
+│   ├── Dst: 33:33:00:00:00:02  ← multicast Ethernet pour ff02::2
+│   ├── Src: 00:00:27:XX:XX:XX  ← MAC du client
+│   └── Type: IPv6 (0x86DD)
+│
+├── Internet Protocol Version 6
+│   ├── Src: fe80::a00:27ff:fe00:1  ← adresse link-local du client
+│   ├── Dst: ff02::2                ← all-routers multicast
+│   ├── Next Header: ICMPv6 (58)
+│   └── Hop Limit: 255             ← valeur obligatoire RFC 4861
+│
+└── ICMPv6 Router Solicitation
+    ├── Type: 133
+    ├── Code: 0
+    └── Option: Source Link-Layer Address [MAC du client]
+```
+
+#### Analyse du Router Advertisement
+
+```
+Frame 2: 126 bytes
+│
+├── Ethernet II
+│   ├── Dst: 33:33:00:00:00:01  ← multicast Ethernet pour ff02::1
+│   └── Src: MAC du routeur
+│
+├── Internet Protocol Version 6
+│   ├── Src: fe80::1             ← adresse link-local du routeur
+│   └── Dst: ff02::1             ← all-nodes multicast
+│
+└── ICMPv6 Router Advertisement
+    ├── Type: 134
+    ├── Cur Hop Limit: 64
+    ├── Flags: M=0, O=0          ← SLAAC pur, pas de DHCPv6
+    ├── Router Lifetime: 1800s
+    ├── Reachable Time: 0
+    ├── Retrans Timer: 0
+    └── Option: Prefix Information
+        ├── Prefix Length: 64
+        ├── L-flag: 1 (on-link)
+        ├── A-flag: 1 (autonomous — SLAAC actif)
+        ├── Valid Lifetime: 3600s
+        ├── Preferred Lifetime: 1800s
+        └── Prefix: 2001:db8::
+```
+
+**Le flag `A=1` dans le Prefix Information est la clé** : il indique au client qu'il peut utiliser ce préfixe pour s'autoconfigurer via SLAAC. Sans ce flag, le préfixe est annoncé mais SLAAC ne s'applique pas.
+
+#### DAD — Duplicate Address Detection
+
+Avant d'utiliser son adresse générée, le client envoie un **Neighbor Solicitation** vers l'adresse multicast Solicited-Node correspondante :
+
+```bash
+# Format de l'adresse Solicited-Node :
+# ff02::1:ff + les 24 derniers bits de l'adresse à vérifier
+
+# Pour 2001:db8::200:ff:fe00:2 :
+# Solicited-Node = ff02::1:ff00:0002
+```
+
+```
+Frame 3: DAD - Neighbor Solicitation
+├── Src: ::  (adresse non encore assignée)
+├── Dst: ff02::1:ffXX:XXXX (solicited-node multicast)
+└── Target: 2001:db8::200:ff:fe00:2 (adresse à vérifier)
+
+Si personne ne répond dans 1 seconde → adresse disponible → ACTIVE
+```
+
+#### Vérification de l'adresse obtenue
+
+Sur le client Linux :
+
+```bash
+ip -6 addr show ens33
+```
+
+```
+2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP>
+    inet6 2001:db8::20c:29ff:feab:cdef/64 scope global dynamic
+       valid_lft 3598sec preferred_lft 1798sec
+    inet6 fe80::20c:29ff:feab:cdef/64 scope link
+       valid_lft forever preferred_lft forever
+```
+
+#### Filtres Wireshark utiles
+
+```
+# Router Solicitation et Router Advertisement
+icmpv6.type == 133 || icmpv6.type == 134
+
+# Neighbor Solicitation et Neighbor Advertisement (DAD inclus)
+icmpv6.type == 135 || icmpv6.type == 136
+
+# Uniquement les messages DAD (source = ::)
+icmpv6.type == 135 && ipv6.src == ::
+
+# Préfixe annoncé dans le RA
+icmpv6.opt.prefix
+```
+
+---
+
+## Comparaison DHCPv4 vs SLAAC IPv6
+
+| Aspect                     | DHCPv4                         | SLAAC (IPv6)                               |
+| -------------------------- | ------------------------------ | ------------------------------------------ |
+| **Architecture**           | Serveur centralisé obligatoire | Routeur suffit (décentralisé)              |
+| **Protocole de transport** | UDP (ports 67/68)              | ICMPv6 (types 133/134/135/136)             |
+| **Diffusion**              | Broadcast `255.255.255.255`    | Multicast ciblé (`ff02::1`, `ff02::2`)     |
+| **Résolution adresse**     | ARP (broadcast couche 2)       | Neighbor Discovery Protocol (multicast)    |
+| **Génération d'adresse**   | Serveur attribue depuis pool   | Client génère (préfixe + interface ID)     |
+| **Préfixe réseau**         | Variable (`/8` à `/30`)        | `/64` obligatoire pour SLAAC               |
+| **Gestion d'état**         | Stateful (baux, logs, pool)    | Stateless (aucune base centrale)           |
+| **DNS**                    | Option 6 DHCP (natif)          | Nécessite DHCPv6 ou RDNSS (RFC 8106)       |
+| **Vie privée**             | MAC non exposée dans l'IP      | EUI-64 expose la MAC (Privacy Ext. requis) |
+| **Scalabilité**            | Limitée par le serveur         | Native (chaque client autonome)            |
+| **Résilience**             | Point de défaillance unique    | Continue si le routeur est disponible      |
+| **Vérification unicité**   | Serveur gère le pool           | DAD via Neighbor Solicitation              |
+
+> [!NOTE]
+> **Pourquoi le multicast IPv6 est meilleur que le broadcast IPv4 ?**
+> Le broadcast IPv4 (`255.255.255.255`) est traité par **toutes les machines** du segment, y compris celles qui ne sont pas concernées. Le multicast IPv6 (`ff02::1`, `ff02::2`) n'est traité que par les machines **abonnées au groupe multicast** correspondant. Cela réduit la charge CPU sur les machines non concernées et améliore la scalabilité.
 
 ---
 
 ## Conclusion
 
-Ce lab démontre la puissance de l'analyse protocolaire. Comprendre comment une machine obtient son adresse est la base fondamentale pour tout expert en réseau ou en cybersécurité.
+### Ce que ce lab démontre
+
+**DHCPv4** et **SLAAC** résolvent le même problème — donner une configuration réseau à une machine — mais avec des philosophies opposées :
+
+- **DHCP** centralise le contrôle : le serveur sait tout, attribue tout, log tout. Indispensable quand on a besoin de traçabilité et de contrôle précis (entreprise, datacenter).
+- **SLAAC** distribue le contrôle : chaque client est autonome, le routeur diffuse uniquement un préfixe. Élégant pour les grands réseaux ou IoT, mais les logs centraux sont absents par nature.
+
+### Enseignements de la capture réseau
+
+```
+DHCPv4 — Ce qu'on apprend en capturant le DORA :
+├── Le client n'a AUCUNE adresse au départ (src = 0.0.0.0)
+├── Le broadcast est une nécessité, pas un choix de conception
+├── Le Transaction ID lie chaque demande à sa réponse
+└── Le DHCPACK contient toute la configuration en une seule trame
+
+SLAAC — Ce qu'on apprend en capturant RS/RA/DAD :
+├── IPv6 utilise le multicast là où IPv4 utilise le broadcast
+├── L'adresse link-local existe AVANT l'autoconfiguration globale
+├── EUI-64 révèle la MAC dans l'IP — Privacy Extensions corrigent ça
+└── DAD protège contre les doublons sans serveur central
+```
+
+### Références
+
+| RFC      | Sujet                                      |
+| -------- | ------------------------------------------ |
+| RFC 2131 | Dynamic Host Configuration Protocol (DHCP) |
+| RFC 2132 | DHCP Options and BOOTP Vendor Extensions   |
+| RFC 4861 | Neighbor Discovery for IPv6                |
+| RFC 4862 | IPv6 Stateless Address Autoconfiguration   |
+| RFC 4941 | Privacy Extensions for SLAAC               |
+| RFC 8106 | IPv6 Router Advertisement Options for DNS  |
 
 ---
-*Writeup rédigé par **ZCo0k**.*
+
+_Writeup rédigé par **Zcook**_

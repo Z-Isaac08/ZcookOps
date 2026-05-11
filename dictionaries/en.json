@@ -12,11 +12,11 @@
     "ctf": "CTF Writeups",
     "pentest": "Pentest Labs",
     "network": "Network Labs",
-    "walkthroughs": "Methodology"
+    "walkthroughs": "Off-Log"
   },
   "home": {
     "hero": {
-      "title": "ZcookOps — Cyber Security Repository",
+      "title": "ZNote — Cyber Security Repository",
       "description": "Technical explorations, lab reports, and threat analysis by **Zcook**. Cybersecurity & AI Master's student, focused on infrastructure and offensive security."
     },
     "categories": {

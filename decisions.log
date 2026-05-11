@@ -1,10 +1,10 @@
-# ZcookOps — Decisions Log
+# ZNote — Decisions Log
 
 ---
 
 ## 2026-04-29 — Project Initialization & Stack Selection
 
-**Task:** Initialize the ZcookOps project — define stack, structure, and agent system.
+**Task:** Initialize the ZNote project — define stack, structure, and agent system.
 **Decision:** Next.js 15 (App Router) + TypeScript (relaxed) + Tailwind v4 + shadcn/ui. Content via local MDX files. Bilingual FR/EN. Dark mode default.
 **Alternatives considered:**
 - Vite + React (rejected: no SSG/SSR, weaker for content-heavy sites)
@@ -31,7 +31,7 @@
 ## 2026-04-29 — Site Name
 
 **Task:** Decide on the public-facing site name.
-**Decision:** ZcookOps — kept as-is.
+**Decision:** ZNote — kept as-is (formerly ZcookOps).
 **Alternatives considered:** None seriously — the name is memorable, has personality, and the "Ops" suffix ties to cybersecurity.
 **Reasoning:** User liked it. It works.
 **Status:** Active
@@ -46,4 +46,26 @@
 - Hacker aesthetic with terminal greens and monospace (rejected: user preferred clean modern)
 - Custom design direction (not specified)
 **Reasoning:** Clean and professional. shadcn/ui already provides this baseline. Less custom work needed.
+**Status:** Active
+
+---
+
+## 2026-05-11 — Logo Integration
+
+**Task:** Integrate the official logo `z_logo.png`.
+**Decision:** Add logo to the Header (alongside the text) and use it as the site's Favicon.
+**Alternatives considered:**
+- Replace text "ZNote" with logo (rejected by user)
+- Logo only in Navbar (rejected by user)
+**Reasoning:** User wanted the logo accompanied by the text "ZNote" in the Navbar and used as a favicon. Redimensioning to 48x48 in Navbar for better visibility (increased from 32x32).
+---
+
+## 2026-05-11 — Content Integration (Lab Hunter)
+
+**Task:** Integrate the "LAB HUNTER - HACKSMATER" write-up.
+**Decision:** 
+- Converted to MDX in `content/pentest-labs/`.
+- Moved images to `public/images/content/lab-hunter/`.
+- Used `%20` encoding for image URLs in MDX to handle spaces in filenames.
+**Reasoning:** Maintain clean repo structure by separating raw docs from production content. `pentest-labs` was the most appropriate category for this web exploitation lab.
 **Status:** Active

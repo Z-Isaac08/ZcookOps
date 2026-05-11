@@ -8,15 +8,15 @@
     "author": "Auteur"
   },
   "nav": {
-    "home": "Dashboard",
-    "ctf": "CTF Writeups",
-    "pentest": "Pentest Labs",
-    "network": "Network Labs",
-    "walkthroughs": "Methodology"
+    "home": "Accueil",
+    "ctf": "CTF & Challenges",
+    "pentest": "Labs Pentest",
+    "network": "Labs Réseau",
+    "walkthroughs": "Hors-Log"
   },
   "home": {
     "hero": {
-      "title": "ZcookOps | Cyber Security Repository",
+      "title": "ZNote | Cyber Security Repository",
       "description": "Explorations techniques, rapports de laboratoires et analyses de menaces par **Zcook**. Étudiant en Master Cybersécurité & IA, passionné par l'infrastructure et l'offensive security."
     },
     "categories": {
@@ -34,7 +34,7 @@
         "description": "Architecture, virtualisation et sécurisation de réseaux complexes."
       },
       "walkthroughs": {
-        "title": "Méthodologie & Guides",
+        "title": "Hors-Piste",
         "description": "Tutoriels approfondis sur les outils, les protocoles et les bonnes pratiques cyber."
       }
     }

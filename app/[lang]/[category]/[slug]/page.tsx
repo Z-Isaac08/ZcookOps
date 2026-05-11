@@ -34,7 +34,9 @@ export default async function WriteupPage({
               <Badge variant="secondary" className="uppercase">
                 {writeup.metadata.category.replace('-', ' ')}
               </Badge>
-              <Badge>{writeup.metadata.difficulty || 'medium'}</Badge>
+              {writeup.metadata.difficulty && (
+                <Badge>{writeup.metadata.difficulty}</Badge>
+              )}
               <div className="flex items-center text-sm text-muted-foreground">
                 <Calendar className="w-4 h-4 mr-2" />
                 {writeup.metadata.date}

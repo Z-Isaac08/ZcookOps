@@ -10,7 +10,9 @@ export function WriteupCard({ writeup, lang }: { writeup: WriteupMetadata; lang:
       <Card className="h-full hover:border-primary/50 transition-colors cursor-pointer flex flex-col">
         <CardHeader>
           <div className="flex justify-between items-start mb-2">
-            <Badge variant="outline">{writeup.difficulty || 'medium'}</Badge>
+            {writeup.difficulty && (
+              <Badge variant="outline">{writeup.difficulty}</Badge>
+            )}
             <div className="flex items-center text-xs text-muted-foreground">
               <Calendar className="w-3 h-3 mr-1" />
               {writeup.date}

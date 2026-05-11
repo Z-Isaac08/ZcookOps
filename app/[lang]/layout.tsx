@@ -14,8 +14,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'ZcookOps',
+  title: 'ZNote',
   description: 'Cybersecurity walkthroughs and writeups',
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/favicon.ico',
+  },
 };
 
 export async function generateStaticParams() {

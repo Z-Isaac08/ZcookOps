@@ -1,0 +1,116 @@
+---
+title: "L'Exploitation Binaire : Le Domaine que je Déteste (Mais qui est Objectivement Impressionnant)"
+date: '2026-05-11'
+tags: ['Binary Exploitation', 'Humour', 'Buffer Overflow', 'GDB', 'ELF', 'Walkthrough', 'Rant']
+category: 'walkthroughs'
+lang: 'fr'
+description: "L'exploitation binaire c'est brillant, c'est puissant, c'est le summum de la compréhension système. C'est aussi de l'hexadécimal, des registres CPU, des ELF et des strings cryptiques. Et franchement j'aime pas ça. Voilà pourquoi."
+---
+
+## Une Déclaration d'Amour Contrarié
+
+Il y a des domaines en cybersécurité que tu apprends et tu te dis _"ah ouais, c'est logique, je vois le truc"_. L'injection SQL ? Logique. Le phishing ? Logique. L'ARP Spoofing ? Jean-Michel répond sans montrer sa carte d'identité, on a compris.
+
+Et puis il y a **l'exploitation binaire**.
+
+L'exploitation binaire c'est le domaine où tu ouvres un fichier, tu vois `0x41414141` et on te demande de trouver ça _intéressant_. C'est le domaine où les gens parlent de **gadgets ROP**, de **canaries de stack** et de **heap spray** avec le sourire aux lèvres comme si c'était normal. Comme si parler à un processeur dans sa propre langue natale était une activité de loisir raisonnable.
+
+Je respecte profondément les gens qui font ça. Je comprends que c'est le niveau ultime. Et franchement, j'aime pas ça.
+
+Laisse-moi t'expliquer pourquoi — et pourquoi c'est quand même objectivement brillant.
+
+---
+
+## Ce que c'est (En Vrai)
+
+L'exploitation binaire c'est l'art de **prendre un programme compilé** — un exécutable, un binaire, un truc que ton ordi comprend mais que toi tu vois comme une suite de caractères incompréhensibles — et de le **forcer à faire autre chose que ce pour quoi il a été conçu**.
+
+Pas en modifiant le code source. Pas en changeant la config. En **parlant directement au programme en cours d'exécution**, en manipulant sa mémoire, en exploitant une erreur de programmation au niveau le plus bas qui soit.
+
+C'est comme si tu prenais une voiture, que tu n'ouvrais jamais le capot ni les portes, et que tu trouvais un moyen de la faire démarrer rien qu'en soufflant dans le rétroviseur d'une façon particulière. Parce que le constructeur a oublié de vérifier l'entrée d'air.
+
+C'est ça l'exploitation binaire. Et oui, c'est dingue.
+
+---
+
+## Ce qu'il Fait de Bien (Honnêtement)
+
+### Il t'apprend comment un ordinateur VRAIMENT fonctionne
+
+Quand tu fais de l'exploitation binaire, tu n'as plus le luxe de penser en Python ou en JavaScript. Tu penses en **registres CPU**. Tu sais ce que fait la stack à chaque appel de fonction. Tu comprends pourquoi `ESP` pointe là et pas ailleurs.
+
+C'est la compréhension système la plus profonde qui existe en sécurité. Les gens qui maîtrisent le binaire comprennent les ordinateurs d'une façon que 99% des développeurs n'atteindront jamais. Chapeau bas, vraiment.
+
+### Il révèle des vulnérabilités que personne d'autre ne verrait
+
+Un testeur web cherche des injections dans les formulaires. Un expert binaire regarde un programme tourner et voit une vulnérabilité dans la façon dont il alloue de la mémoire. Invisible à l'œil nu. Indétectable sans ses outils. Et pourtant là, bien réelle, exploitable.
+
+Le **buffer overflow** — la vulnérabilité binaire la plus classique — c'est simplement écrire plus de données que prévu dans une zone mémoire pour écraser ce qui suit. Simple en concept. Dévastateur en pratique. Et tu n'as aucune chance de le voir sans comprendre la mémoire en profondeur.
+
+### Il permet d'attaquer ce que les autres ne peuvent pas toucher
+
+Les applications web, tout le monde les teste. Les APIs, tout le monde les teste. Mais les **binaires natifs** — les pilotes Windows, les firmwares d'équipements réseau, les logiciels industriels, les jeux vidéo — là c'est le terrain des experts en exploitation binaire. Un terrain où les vulnérabilités sont rares, précieuses, et souvent critiques.
+
+Les CVE les plus graves de l'histoire — les failles kernel, les exploits de navigateurs, les remote code execution sur des équipements industriels — viennent de là. Pas d'une injection SQL mal filtrée.
+
+### Il est irréversiblement impressionnant
+
+Quand quelqu'un te montre un exploit binaire fonctionner — il lance un programme apparemment normal, envoie une entrée spécialement forgée, et obtient un shell root — t'as beau ne pas comprendre la moitié de ce qui vient de se passer, tu restes bouche bée.
+
+C'est de la magie noire qui repose sur de la physique pure. Et c'est pour ça que les chercheurs en sécurité qui font ça pour vivre sont traités comme des sorciers dans la communauté. Parce qu'ils le méritent.
+
+---
+
+## Pourquoi J'aime Pas Ça (Le Vrai Rant)
+
+### Le hexadécimal
+
+Dès que tu ouvres un binaire, t'es accueilli par un mur d'hexadécimal. `4d 5a 90 00 03 00 00 00`. C'est sensé vouloir dire quelque chose. Et effectivement ça veut dire quelque chose — c'est l'en-tête d'un exécutable Windows (MZ header, salut DOS).
+
+Mais pour y arriver, t'as dû apprendre à lire une langue que personne n'a jamais pensé à rendre humainement agréable. L'hexadécimal c'est pas difficile en soi. C'est juste... c'est pas pour moi. Voir `0x41` et comprendre instinctivement que c'est la lettre `A` — c'est un réflexe que je n'ai pas développé et que je n'ai pas envie de développer à 23h devant un challenge CTF.
+
+### Les formats de fichiers ELF et PE
+
+Un **ELF** c'est le format des exécutables Linux. Un **PE** c'est le format Windows. Deux formats binaires avec des en-têtes, des sections, des segments, des tables de symboles, des relocations. Pour analyser un binaire, tu dois comprendre comment il est structuré physiquement sur le disque.
+
+C'est fascinant sur le papier. En pratique, c'est lire la notice de montage d'un meuble IKEA en suédois. Avec des parties manquantes. Et sans les images.
+
+### Les strings cryptiques et les noms de registres
+
+`RIP`, `RSP`, `RBP`, `RAX`, `RBX`, `RCX`, `RDX`, `RSI`, `RDI`. Ce sont les registres d'un processeur x86-64. Tu dois les connaître par cœur, savoir ce que chacun fait, et visualiser mentalement leur contenu pendant l'exécution du programme.
+
+Et le pire c'est que ces noms viennent d'une époque où les registres s'appelaient `AX`, `BX`, `CX`, `DX` sur 16 bits. Puis on a rajouté `E` devant pour 32 bits (`EAX`). Puis `R` pour 64 bits (`RAX`). C'est l'accumulation de 40 ans de rétrocompatibilité dans un seul nom de variable. Et tu dois jongler avec ça naturellement.
+
+### Le fait que tout soit intentionnel
+
+Ce qui me frustre le plus dans l'exploitation binaire c'est que **chaque détail compte**. Un offset mal calculé d'un seul octet et ton exploit plante. Une adresse mémoire qui change parce que l'ASLR a randomisé le layout et tout ton travail de la journée part à la poubelle.
+
+En web, si tu rates ton injection SQL tu vois un message d'erreur. En binaire, si tu rates ton exploit tu vois... rien. Ou un segfault. Ou un comportement aléatoire qui dépend de l'état de la mémoire au moment de l'exécution. C'est du débogage dans l'obscurité totale avec un mauvais éclairage de téléphone.
+
+### GDB
+
+`GDB` c'est le débogueur standard pour analyser les binaires Linux. C'est un outil puissant. C'est aussi une interface des années 80 qui te demande de te souvenir de commandes comme `x/20xw $esp` pour afficher 20 mots de 4 octets en hexadécimal à partir du registre ESP.
+
+Il y a des plugins qui l'améliorent — `pwndbg`, `peda`, `gef`. Ces plugins sont excellents. Ils rendent GDB utilisable par des humains normaux. Mais le fait qu'un outil aussi central nécessite des plugins communautaires pour être agréable te dit tout sur l'expérience utilisateur de base.
+
+---
+
+## Mon Rapport Honnête avec le Binaire
+
+Je comprends **pourquoi** c'est important. Je comprends que sans gens qui maîtrisent le binaire, des familles entières de vulnérabilités critiques ne seraient jamais découvertes ni corrigées. Je comprends que c'est le sommet de la pyramide en matière de compréhension système.
+
+Je comprends tout ça.
+
+Et j'ouvre quand même un ELF, je vois `0x7ffeabcd1234` et mon cerveau dit _"non merci, bonne journée"_.
+
+C'est une question de goût autant que de compétence. Certains regardent du désassembly en mode trace et voient une histoire. Moi je vois de l'anxiété en hexadécimal. Et c'est correct — la cybersécurité est un domaine assez large pour que tu n'aies pas à tout maîtriser.
+
+Mais je vais continuer à essayer. Lentement. Douloureusement. Avec beaucoup de café et une documentation ouverte en permanence.
+
+Parce que le jour où je comprendrai vraiment un buffer overflow de bout en bout — la stack, les offsets, l'overwrite de l'adresse de retour, le shell qui pop — ce sera une satisfaction que peu de domaines peuvent offrir.
+
+En attendant, `0x41414141` et moi, on n'est pas amis.
+
+---
+
+_Rédigé avec honnêteté (et une légère animosité envers le binaire) par **Zcook**_

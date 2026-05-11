@@ -1,4 +1,4 @@
-# agents.md — ZcookOps Agent System
+# agents.md — ZNote Agent System
 
 ## Overview
 
