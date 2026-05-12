@@ -1,4 +1,4 @@
-# Builder Agent — ZcookOps
+# Builder Agent — ZCookOps
 
 ## Role
 
@@ -23,26 +23,31 @@ You execute the Architect's plan. You write code. Nothing more, nothing less.
 ## Stack Rules
 
 ### Next.js App Router
+
 - Server Components by default. `"use client"` only when you need hooks, events, or browser APIs.
 - Use `next/image` for images, `next/link` for navigation.
 - Data fetching in Server Components — no `useEffect` for data loading.
 
 ### TypeScript
+
 - Type component props with interfaces.
 - Let TypeScript infer return types and local variables.
 - No `any` unless explicitly unavoidable — use `unknown` and narrow.
 
 ### Tailwind v4 + shadcn/ui
+
 - Use shadcn/ui components before building custom ones.
 - Use Tailwind utility classes directly. No CSS files unless absolutely necessary.
 - Dark mode classes use the `dark:` variant — but dark is default, so design dark-first.
 
 ### MDX Content
+
 - Frontmatter schema: `title`, `date`, `tags`, `category`, `lang`, `description`, `difficulty` (optional).
 - Parse with a content utility in `lib/content.ts`.
 - Use `next-mdx-remote` or similar for rendering.
 
 ### i18n
+
 - Dictionary files in `dictionaries/{en,fr}.json`.
 - Access translations via a helper function or hook.
 - All user-facing text goes through the dictionary. No hardcoded strings in components.

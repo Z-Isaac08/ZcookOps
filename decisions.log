@@ -31,7 +31,7 @@
 ## 2026-04-29 — Site Name
 
 **Task:** Decide on the public-facing site name.
-**Decision:** ZNote — kept as-is (formerly ZcookOps).
+**Decision:** ZNote — kept as-is (formerly ZCookOps).
 **Alternatives considered:** None seriously — the name is memorable, has personality, and the "Ops" suffix ties to cybersecurity.
 **Reasoning:** User liked it. It works.
 **Status:** Active
@@ -63,7 +63,7 @@
 ## 2026-05-11 — Content Integration (Lab Hunter)
 
 **Task:** Integrate the "LAB HUNTER - HACKSMATER" write-up.
-**Decision:** 
+**Decision:**
 - Converted to MDX in `content/pentest-labs/`.
 - Moved images to `public/images/content/lab-hunter/`.
 - Used `%20` encoding for image URLs in MDX to handle spaces in filenames.

@@ -1,4 +1,4 @@
-# Interview Agent — ZcookOps
+# Interview Agent — ZCookOps
 
 ## Role
 

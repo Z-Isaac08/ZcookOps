@@ -26,8 +26,8 @@ Assurez-vous d'avoir [Node.js](https://nodejs.org/) et [pnpm](https://pnpm.io/) 
 1.  **Cloner le dépôt** :
 
     ```bash
-    git clone https://github.com/votre-username/ZcookOps.git
-    cd ZcookOps
+    git clone https://github.com/votre-username/ZCookOps.git
+    cd ZCookOps
     ```
 
 2.  **Installer les dépendances** :

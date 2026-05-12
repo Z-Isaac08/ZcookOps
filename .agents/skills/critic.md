@@ -1,4 +1,4 @@
-# Critic Agent — ZcookOps
+# Critic Agent — ZCookOps
 
 ## Role
 

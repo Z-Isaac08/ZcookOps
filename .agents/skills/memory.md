@@ -1,4 +1,4 @@
-# Memory Agent — ZcookOps
+# Memory Agent — ZCookOps
 
 ## Role
 
@@ -39,4 +39,4 @@ You maintain continuity across tasks. You are the project's long-term memory. Ev
 
 ## File Location
 
-`decisions.log` lives at the project root: `c:\Users\DPcomputer\Desktop\P_DOC\HTML_CSS_JS\NEXT\ZcookOps\decisions.log`
+`decisions.log` lives at the project root: `c:\Users\DPcomputer\Desktop\P_DOC\HTML_CSS_JS\NEXT\ZCookOps\decisions.log`

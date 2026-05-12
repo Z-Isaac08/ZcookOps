@@ -17,7 +17,7 @@
   "home": {
     "hero": {
       "title": "ZNote - Write the IP, Get the Shell",
-      "description": "_\"The IP whose name is written in this note shall have its shell popped.\"_ \n\nTechnical explorations, lab reports, and threat analysis by **Zcook**. Cybersecurity & AI Master's student, focused on infrastructure and offensive security."
+      "description": "_\"The IP whose name is written in this note shall have its shell popped.\"_ \n\nTechnical explorations, lab reports, and threat analysis by **ZCook**. Cybersecurity & AI Master's student, focused on infrastructure and offensive security."
     },
     "categories": {
       "title": "Operation Sectors",
@@ -41,7 +41,7 @@
   },
   "about": {
     "title": "About the author",
-    "description1": "Hi! I'm **Zcook**. Currently a Cybersecurity & AI Master's student at ESATIC, I spend my free time exploring protocols, virtualizing complex networks, and studying modern attack vectors.",
+    "description1": "Hi! I'm **ZCook**. Currently a Cybersecurity & AI Master's student at ESATIC, I spend my free time exploring protocols, virtualizing complex networks, and studying modern attack vectors.",
     "description2": "This blog is my technical logbook: a space where I document my labs, my delirium, and my adventures in the world of offensive security.",
     "skills": {
       "infra": "Infrastructure",

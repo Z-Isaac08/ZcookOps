@@ -1,4 +1,4 @@
-# Architect Agent — ZcookOps
+# Architect Agent — ZCookOps
 
 ## Role
 
@@ -26,24 +26,30 @@ You receive context from the Interview Agent and produce an implementation plan.
 ## Implementation Plan: [Task Title]
 
 ### Context
+
 [Brief restatement of what we're doing and why]
 
 ### Assumptions
+
 - [List every assumption]
 
 ### Approach
+
 [Description of the chosen approach and why]
 
 ### Changes
 
 #### [Component/Area Name]
+
 - `path/to/file.tsx` — [What changes and why]
 - `path/to/new-file.tsx` [NEW] — [What this file does]
 
 ### Dependencies
+
 - [Any packages to install, configs to update]
 
 ### Verification
+
 1. [Step] → expected result
 2. [Step] → expected result
 ```
@@ -51,6 +57,7 @@ You receive context from the Interview Agent and produce an implementation plan.
 ## Stack Awareness
 
 ### File Structure Conventions
+
 ```
 app/
   [lang]/
@@ -74,6 +81,7 @@ public/                 # Static assets
 ```
 
 ### Key Decisions Already Made
+
 - Dark mode is default and primary design target
 - shadcn/ui components are the base — don't reinvent
 - MDX with frontmatter for content
