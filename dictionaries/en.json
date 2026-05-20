@@ -11,7 +11,6 @@
     "home": "Dashboard",
     "ctf": "CTF Writeups",
     "pentest": "Pentest Labs",
-    "network": "Network Labs",
     "walkthroughs": "Off-Log"
   },
   "home": {
@@ -29,10 +28,6 @@
         "title": "Pentesting Labs",
         "description": "Intrusion reports on target machines (HTB, THM) and vulnerable environments."
       },
-      "network": {
-        "title": "Infrastructure & Network",
-        "description": "Architecture, virtualization, and securing of complex networks."
-      },
       "walkthroughs": {
         "title": "Off-Log",
         "description": "In-depth tutorials on tools, protocols, and cyber best practices."
@@ -41,7 +36,7 @@
   },
   "about": {
     "title": "About the author",
-    "description1": "Hi! I'm **ZCook**. Currently a Cybersecurity & AI Master's student at ESATIC, I spend my free time exploring protocols, virtualizing complex networks, and studying modern attack vectors.",
+    "description1": "Hi! I'm **ZCook**. Currently a Cybersecurity & AI Master's student at ESATIC, I spend my free time on pentesting, developing smart security tools, and studying modern attack vectors.",
     "description2": "This blog is my technical logbook: a space where I document my labs, my delirium, and my adventures in the world of offensive security.",
     "skills": {
       "infra": "Infrastructure",

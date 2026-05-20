@@ -69,3 +69,12 @@
 - Used `%20` encoding for image URLs in MDX to handle spaces in filenames.
 **Reasoning:** Maintain clean repo structure by separating raw docs from production content. `pentest-labs` was the most appropriate category for this web exploitation lab.
 **Status:** Active
+
+---
+
+## 2026-05-20 — Retiring Network Labs Category
+
+**Task:** Remove the `network-labs` category and focus the blog on offensive/AI security.
+**Decision:** Deleted the `content/network-labs/` directory and its contents (`ipv4-ipv6-addressing.mdx`, `linux-adds.mdx`). Updated Header navigation, home page category cards, and dynamic category page routing validation to exclude `network-labs`. Rewrote author description to focus on offensive/AI security.
+**Reasoning:** The user decided that networking architecture was out of place and wanted to concentrate strictly on offensive security/pentesting/CTFs.
+**Status:** Active

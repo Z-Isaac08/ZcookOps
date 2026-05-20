@@ -35,7 +35,6 @@ export default async function WriteupPage({
               <Badge variant="secondary" className="uppercase">
                 {category === 'ctf' ? dict.nav.ctf 
                   : category === 'pentest-labs' ? dict.nav.pentest
-                  : category === 'network-labs' ? dict.nav.network
                   : category === 'walkthroughs' ? dict.nav.walkthroughs
                   : category.replace('-', ' ')}
               </Badge>

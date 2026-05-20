@@ -6,7 +6,7 @@ Project-specific behavioral guidelines. Every agent, every task, every line of c
 
 ## Project Context
 
-**ZNote** is a personal cybersecurity writeups site — not a portfolio. It publishes walkthroughs and writeups for CTF challenges, pentest labs, network virtualized labs, and other cybersecurity work.
+**ZNote** is a personal cybersecurity writeups site — not a portfolio. It publishes walkthroughs and writeups for CTF challenges, pentest labs, and other cybersecurity work.
 
 **Stack:** Next.js 15 (App Router) · TypeScript (relaxed) · Tailwind CSS v4 · shadcn/ui  
 **Content:** Local `.mdx` files in the repo (no CMS)  
@@ -95,7 +95,7 @@ For multi-step tasks, state a brief plan:
 
 ### Content (MDX)
 - All writeups live in a `content/` directory at the project root.
-- Organized by type: `ctf/`, `pentest-labs/`, `network-labs/`, `walkthroughs/`.
+- Organized by type: `ctf/`, `pentest-labs/`, `walkthroughs/`.
 - Each `.mdx` file has frontmatter with: title, date, tags, category, lang, description.
 
 ### i18n

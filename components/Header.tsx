@@ -30,9 +30,6 @@ export async function Header({ lang }: { lang: Locale }) {
           <Link href={`/${lang}/pentest-labs`} className="transition-colors hover:text-primary">
             {dict.nav.pentest}
           </Link>
-          <Link href={`/${lang}/network-labs`} className="transition-colors hover:text-primary">
-            {dict.nav.network}
-          </Link>
           <Link href={`/${lang}/walkthroughs`} className="transition-colors hover:text-primary">
             {dict.nav.walkthroughs}
           </Link>

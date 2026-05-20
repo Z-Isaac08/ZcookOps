@@ -11,7 +11,6 @@
     "home": "Accueil",
     "ctf": "CTF & Challenges",
     "pentest": "Labs Pentest",
-    "network": "Labs Réseau",
     "walkthroughs": "Hors-Log"
   },
   "home": {
@@ -29,10 +28,6 @@
         "title": "Labs Pentest",
         "description": "Rapports d'intrusion sur machines cibles (HTB, THM) et environnements vulnérables."
       },
-      "network": {
-        "title": "Infrastructure & Réseau",
-        "description": "Architecture, virtualisation et sécurisation de réseaux complexes."
-      },
       "walkthroughs": {
         "title": "Hors-Log",
         "description": "Tutoriels approfondis sur les outils, les protocoles et les bonnes pratiques cyber."
@@ -41,7 +36,7 @@
   },
   "about": {
     "title": "À propos de l'auteur",
-    "description1": "Salut ! Moi c'est **ZCook**. Actuellement étudiant en Master Cybersécurité & IA à l'ESATIC, je consacre mon temps libre à l'exploration des protocoles, à la virtualisation de réseaux complexes et à l'étude des vecteurs d'attaque modernes.",
+    "description1": "Salut ! Moi c'est **ZCook**. Actuellement étudiant en Master Cybersécurité & IA à l'ESATIC, je consacre mon temps libre au pentesting, au développement d'outils de sécurité intelligents et à l'étude des vecteurs d'attaque modernes.",
     "description2": "Ce blog est mon carnet de bord technique : un espace où je documente mes laboratoires, mes délires et mes aventures dans le monde de l'offensive security.",
     "skills": {
       "infra": "Infrastructure",

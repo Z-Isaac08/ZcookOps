@@ -1,6 +1,6 @@
 # **ZNote** — Cybersecurity Writeups & Lab Reports
 
-**ZNote** est une plateforme moderne dédiée au partage de writeups de CTF, de rapports de laboratoires réseau et d'analyses de vulnérabilités. Conçue par **zcook**, elle sert de carnet de bord technique pour documenter des explorations approfondies en cybersécurité, infrastructure et intelligence artificielle.
+**ZNote** est une plateforme moderne dédiée au partage de writeups de CTF et d'analyses de vulnérabilités. Conçue par **zcook**, elle sert de carnet de bord technique pour documenter des explorations approfondies en cybersécurité, infrastructure et intelligence artificielle.
 
 ## 🚀 Technologies
 
@@ -16,7 +16,6 @@ Les articles sont organisés par catégories dans le dossier `content/` :
 
 - `ctf/` : Analyses de challenges et compétitions.
 - `pentest-labs/` : Rapports d'intrusion (Metasploitable, TryHackMe, HTB).
-- `network-labs/` : Architecture réseau et services (Linux ADDS, IPv4/IPv6).
 - `walkthroughs/` : Guides méthodologiques et explorations de RFC.
 
 ## 🛠️ Installation & Développement
@@ -51,7 +50,7 @@ Assurez-vous d'avoir [Node.js](https://nodejs.org/) et [pnpm](https://pnpm.io/) 
    title: 'Titre de votre article'
    date: 'AAAA-MM-JJ'
    tags: ['Tag1', 'Tag2']
-   category: 'network-labs'
+   category: 'pentest-labs'
    lang: 'fr'
    description: "Brève description de l'article."
    difficulty: 'medium'

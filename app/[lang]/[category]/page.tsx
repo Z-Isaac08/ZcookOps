@@ -14,7 +14,7 @@ export default async function CategoryPage({
   const writeups = getWriteupsByCategory(category, lang);
 
   // Validate category
-  const validCategories = ['ctf', 'pentest-labs', 'network-labs', 'walkthroughs'];
+  const validCategories = ['ctf', 'pentest-labs', 'walkthroughs'];
   if (!validCategories.includes(category)) {
     notFound();
   }
@@ -22,7 +22,6 @@ export default async function CategoryPage({
   const categoryTitles: Record<string, string> = {
     'ctf': dict.nav.ctf,
     'pentest-labs': dict.nav.pentest,
-    'network-labs': dict.nav.network,
     'walkthroughs': dict.nav.walkthroughs,
   };
 

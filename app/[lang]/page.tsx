@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getDictionary, Locale } from '@/lib/i18n';
-import { BookOpen, Network, Shield, Terminal } from 'lucide-react';
+import { BookOpen, Shield, Terminal } from 'lucide-react';
 import Link from 'next/link';
 
 export default async function HomePage({ params }: { params: Promise<{ lang: string }> }) {
@@ -18,11 +18,6 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       id: 'pentest-labs',
       icon: <Shield className="w-8 h-8 text-primary" />,
       ...dict.home.categories.pentest,
-    },
-    {
-      id: 'network-labs',
-      icon: <Network className="w-8 h-8 text-primary" />,
-      ...dict.home.categories.network,
     },
     {
       id: 'walkthroughs',
