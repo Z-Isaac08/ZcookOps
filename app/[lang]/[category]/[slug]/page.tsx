@@ -81,7 +81,7 @@ export default async function WriteupPage({
 
         {/* Sidebar / TOC */}
         <aside className="hidden lg:block w-64 shrink-0">
-          <div className="sticky top-24">
+          <div className="sticky top-24 max-h-[calc(100vh-6rem)] overflow-y-auto pr-1">
             <TableOfContents />
           </div>
         </aside>
