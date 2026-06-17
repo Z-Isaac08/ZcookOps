@@ -9,15 +9,14 @@ export default async function CategoryPage({
   params: Promise<{ lang: string; category: string }>;
 }) {
   const { lang, category } = (await params) as { lang: Locale; category: string };
-  const dict = await getDictionary(lang);
 
-  const writeups = getWriteupsByCategory(category, lang);
-
-  // Validate category
   const validCategories = ['ctf', 'pentest-labs', 'walkthroughs'];
   if (!validCategories.includes(category)) {
     notFound();
   }
+
+  const dict = await getDictionary(lang);
+  const writeups = getWriteupsByCategory(category, lang);
 
   const categoryTitles: Record<string, string> = {
     'ctf': dict.nav.ctf,
@@ -29,8 +28,11 @@ export default async function CategoryPage({
     <main className="container mx-auto px-4 py-12 grow">
       <div className="mb-12">
         <h1 className="text-4xl font-bold mb-4">{categoryTitles[category]}</h1>
-        <p className="text-muted-foreground text-lg">{writeups.length} {lang === 'fr' ? 'articles disponibles' : 'articles available'}.</p>
-        
+
+        <p className="text-muted-foreground text-lg">
+          {writeups.length} {lang === 'fr' ? 'articles disponibles' : 'articles available'}.
+        </p>
+
         {lang === 'en' && writeups.length > 0 && (
           <div className="mt-4 p-3 bg-muted/50 border border-border rounded-lg block w-full text-center">
             <span className="text-sm text-muted-foreground">
@@ -42,7 +44,11 @@ export default async function CategoryPage({
 
       {writeups.length === 0 ? (
         <div className="text-center py-20 border-2 border-dashed rounded-xl">
-          <p className="text-muted-foreground">Aucun article trouvé dans cette catégorie.</p>
+          <p className="text-muted-foreground">
+            {lang === 'fr'
+              ? 'Aucun article trouvé dans cette catégorie.'
+              : 'No articles found in this category.'}
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
