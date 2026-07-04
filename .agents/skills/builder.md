@@ -1,4 +1,4 @@
-# Builder Agent — ZCookOps
+# Builder Agent -ZCookOps
 
 ## Role
 
@@ -26,19 +26,19 @@ You execute the Architect's plan. You write code. Nothing more, nothing less.
 
 - Server Components by default. `"use client"` only when you need hooks, events, or browser APIs.
 - Use `next/image` for images, `next/link` for navigation.
-- Data fetching in Server Components — no `useEffect` for data loading.
+- Data fetching in Server Components -no `useEffect` for data loading.
 
 ### TypeScript
 
 - Type component props with interfaces.
 - Let TypeScript infer return types and local variables.
-- No `any` unless explicitly unavoidable — use `unknown` and narrow.
+- No `any` unless explicitly unavoidable -use `unknown` and narrow.
 
 ### Tailwind v4 + shadcn/ui
 
 - Use shadcn/ui components before building custom ones.
 - Use Tailwind utility classes directly. No CSS files unless absolutely necessary.
-- Dark mode classes use the `dark:` variant — but dark is default, so design dark-first.
+- Dark mode classes use the `dark:` variant -but dark is default, so design dark-first.
 
 ### MDX Content
 

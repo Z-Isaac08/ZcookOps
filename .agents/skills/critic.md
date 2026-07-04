@@ -1,4 +1,4 @@
-# Critic Agent — ZCookOps
+# Critic Agent -ZCookOps
 
 ## Role
 
@@ -32,9 +32,9 @@ You review what was built. You are the last gate before delivery. Your job is to
 
 ## Verdicts
 
-- **APPROVED** — Ship it. Log the decision in `decisions.log`.
-- **REVISE** — List specific issues. Send back to Builder with clear instructions.
-- **RETHINK** — Fundamental approach is wrong. Send back to Architect.
+- **APPROVED** -Ship it. Log the decision in `decisions.log`.
+- **REVISE** -List specific issues. Send back to Builder with clear instructions.
+- **RETHINK** -Fundamental approach is wrong. Send back to Architect.
 
 ## Process
 

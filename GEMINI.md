@@ -1,4 +1,4 @@
-# GEMINI.md — ZNote
+# GEMINI.md -ZNote
 
 Project-specific behavioral guidelines. Every agent, every task, every line of code follows these rules.
 
@@ -6,13 +6,13 @@ Project-specific behavioral guidelines. Every agent, every task, every line of c
 
 ## Project Context
 
-**ZNote** is a personal cybersecurity writeups site — not a portfolio. It publishes walkthroughs and writeups for CTF challenges, pentest labs, and other cybersecurity work.
+**ZNote** is a personal cybersecurity writeups site -not a portfolio. It publishes walkthroughs and writeups for CTF challenges, pentest labs, and other cybersecurity work.
 
-**Stack:** Next.js 15 (App Router) · TypeScript (relaxed) · Tailwind CSS v4 · shadcn/ui  
-**Content:** Local `.mdx` files in the repo (no CMS)  
-**i18n:** Bilingual FR/EN  
-**Visual:** Clean modern dark mode (Vercel docs / shadcn aesthetic)  
-**Backend:** None — static/frontend only  
+**Stack:** Next.js 15 (App Router) · TypeScript (relaxed) · Tailwind CSS v4 · shadcn/ui
+**Content:** Local `.mdx` files in the repo (no CMS)
+**i18n:** Bilingual FR/EN
+**Visual:** Clean modern dark mode (Vercel docs / shadcn aesthetic)
+**Backend:** None -static/frontend only
 
 ---
 
@@ -21,7 +21,7 @@ Project-specific behavioral guidelines. Every agent, every task, every line of c
 **Don't assume. Don't hide confusion. Surface tradeoffs.**
 
 - State assumptions explicitly. If uncertain, ask.
-- If multiple interpretations exist, present them — don't pick silently.
+- If multiple interpretations exist, present them -don't pick silently.
 - If a simpler approach exists, say so. Push back when warranted.
 - If something is unclear, stop. Name what's confusing. Ask.
 
@@ -46,7 +46,7 @@ When editing existing code:
 - Don't "improve" adjacent code, comments, or formatting.
 - Don't refactor things that aren't broken.
 - Match existing style, even if you'd do it differently.
-- If you notice unrelated dead code, mention it — don't delete it.
+- If you notice unrelated dead code, mention it -don't delete it.
 
 When your changes create orphans:
 
@@ -78,29 +78,34 @@ For multi-step tasks, state a brief plan:
 ## 5. Stack Conventions
 
 ### Next.js App Router
+
 - Use `app/` directory structure. No `pages/` directory.
 - Server Components by default. Use `"use client"` only when necessary.
 - Use `layout.tsx` for shared layouts, `page.tsx` for routes.
 - Use `next/image` for images, `next/link` for navigation.
 
 ### TypeScript
-- Relaxed mode — no need for strict types on everything.
+
+- Relaxed mode -no need for strict types on everything.
 - Type props and function signatures. Infer the rest.
 - Prefer interfaces over type aliases for component props.
 
 ### Tailwind v4 + shadcn/ui
-- Use shadcn/ui components as the base — don't reinvent UI primitives.
+
+- Use shadcn/ui components as the base -don't reinvent UI primitives.
 - Customize via Tailwind theme tokens, not inline overrides.
 - Dark mode is the default and primary design target.
 
 ### Content (MDX)
+
 - All writeups live in a `content/` directory at the project root.
 - Organized by type: `ctf/`, `pentest-labs/`, `walkthroughs/`.
 - Each `.mdx` file has frontmatter with: title, date, tags, category, lang, description.
 
 ### i18n
+
 - Support `fr` and `en` locales.
-- Default locale: `fr` (or `en` — to be confirmed during setup).
+- Default locale: `fr` (or `en` -to be confirmed during setup).
 - Use a simple dictionary/namespace approach. No heavy i18n framework unless needed.
 
 ---

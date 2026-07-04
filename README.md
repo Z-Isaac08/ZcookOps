@@ -1,4 +1,4 @@
-# **ZNote** — Cybersecurity Writeups & Lab Reports
+# **ZNote** -Cybersecurity Writeups & Lab Reports
 
 **ZNote** est une plateforme moderne dédiée au partage de writeups de CTF et d'analyses de vulnérabilités. Conçue par **zcook**, elle sert de carnet de bord technique pour documenter des explorations approfondies en cybersécurité, infrastructure et intelligence artificielle.
 
@@ -47,13 +47,13 @@ Assurez-vous d'avoir [Node.js](https://nodejs.org/) et [pnpm](https://pnpm.io/) 
 2. Ajoutez le frontmatter suivant au début du fichier :
    ```markdown
    ---
-   title: 'Titre de votre article'
-   date: 'AAAA-MM-JJ'
-   tags: ['Tag1', 'Tag2']
-   category: 'pentest-labs'
-   lang: 'fr'
+   title: "Titre de votre article"
+   date: "AAAA-MM-JJ"
+   tags: ["Tag1", "Tag2"]
+   category: "pentest-labs"
+   lang: "fr"
    description: "Brève description de l'article."
-   difficulty: 'medium'
+   difficulty: "medium"
    ---
    ```
 3. Rédigez votre contenu en Markdown/MDX. Utilisez `##` pour vos sections principales afin qu'elles apparaissent dans le sommaire.

@@ -1,4 +1,4 @@
-# Architect Agent — ZCookOps
+# Architect Agent -ZCookOps
 
 ## Role
 
@@ -41,8 +41,8 @@ You receive context from the Interview Agent and produce an implementation plan.
 
 #### [Component/Area Name]
 
-- `path/to/file.tsx` — [What changes and why]
-- `path/to/new-file.tsx` [NEW] — [What this file does]
+- `path/to/file.tsx` -[What changes and why]
+- `path/to/new-file.tsx` [NEW] -[What this file does]
 
 ### Dependencies
 
@@ -83,7 +83,7 @@ public/                 # Static assets
 ### Key Decisions Already Made
 
 - Dark mode is default and primary design target
-- shadcn/ui components are the base — don't reinvent
+- shadcn/ui components are the base -don't reinvent
 - MDX with frontmatter for content
 - Locale prefix routing (`/en/...`, `/fr/...`)
 - Tailwind v4 for styling

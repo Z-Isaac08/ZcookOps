@@ -1,10 +1,10 @@
-# ZNote — Decisions Log
+# ZNote -Decisions Log
 
 ---
 
-## 2026-04-29 — Project Initialization & Stack Selection
+## 2026-04-29 -Project Initialization & Stack Selection
 
-**Task:** Initialize the ZNote project — define stack, structure, and agent system.
+**Task:** Initialize the ZNote project -define stack, structure, and agent system.
 **Decision:** Next.js 15 (App Router) + TypeScript (relaxed) + Tailwind v4 + shadcn/ui. Content via local MDX files. Bilingual FR/EN. Dark mode default.
 **Alternatives considered:**
 - Vite + React (rejected: no SSG/SSR, weaker for content-heavy sites)
@@ -16,7 +16,7 @@
 
 ---
 
-## 2026-04-29 — Content Organization by Type
+## 2026-04-29 -Content Organization by Type
 
 **Task:** Decide how to organize writeup content.
 **Decision:** Organize by type (CTF, Pentest Labs, Network Labs, Walkthroughs) rather than by platform.
@@ -28,17 +28,17 @@
 
 ---
 
-## 2026-04-29 — Site Name
+## 2026-04-29 -Site Name
 
 **Task:** Decide on the public-facing site name.
-**Decision:** ZNote — kept as-is (formerly ZCookOps).
-**Alternatives considered:** None seriously — the name is memorable, has personality, and the "Ops" suffix ties to cybersecurity.
+**Decision:** ZNote -kept as-is (formerly ZCookOps).
+**Alternatives considered:** None seriously -the name is memorable, has personality, and the "Ops" suffix ties to cybersecurity.
 **Reasoning:** User liked it. It works.
 **Status:** Active
 
 ---
 
-## 2026-04-29 — Visual Identity
+## 2026-04-29 -Visual Identity
 
 **Task:** Define the visual direction.
 **Decision:** Clean modern dark mode in the style of Vercel docs / shadcn.
@@ -50,7 +50,7 @@
 
 ---
 
-## 2026-05-11 — Logo Integration
+## 2026-05-11 -Logo Integration
 
 **Task:** Integrate the official logo `z_logo.png`.
 **Decision:** Add logo to the Header (alongside the text) and use it as the site's Favicon.
@@ -60,7 +60,7 @@
 **Reasoning:** User wanted the logo accompanied by the text "ZNote" in the Navbar and used as a favicon. Redimensioning to 48x48 in Navbar for better visibility (increased from 32x32).
 ---
 
-## 2026-05-11 — Content Integration (Lab Hunter)
+## 2026-05-11 -Content Integration (Lab Hunter)
 
 **Task:** Integrate the "LAB HUNTER - HACKSMATER" write-up.
 **Decision:**
@@ -72,7 +72,7 @@
 
 ---
 
-## 2026-05-20 — Retiring Network Labs Category
+## 2026-05-20 -Retiring Network Labs Category
 
 **Task:** Remove the `network-labs` category and focus the blog on offensive/AI security.
 **Decision:** Deleted the `content/network-labs/` directory and its contents (`ipv4-ipv6-addressing.mdx`, `linux-adds.mdx`). Updated Header navigation, home page category cards, and dynamic category page routing validation to exclude `network-labs`. Rewrote author description to focus on offensive/AI security.
