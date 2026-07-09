@@ -1,12 +1,13 @@
+import { CodeBlock } from '@/components/CodeBlock';
+import { TableOfContents } from '@/components/TableOfContents';
 import { Badge } from '@/components/ui/badge';
 import { getWriteup } from '@/lib/content';
 import { Locale, getDictionary } from '@/lib/i18n';
-import { notFound } from 'next/navigation';
-import { MDXRemote } from 'next-mdx-remote/rsc';
 import { Calendar, Tag } from 'lucide-react';
-import { TableOfContents } from '@/components/TableOfContents';
-import remarkGfm from 'remark-gfm';
+import { MDXRemote } from 'next-mdx-remote/rsc';
+import { notFound } from 'next/navigation';
 import rehypeSlug from 'rehype-slug';
+import remarkGfm from 'remark-gfm';
 
 export default async function WriteupPage({
   params,
@@ -33,14 +34,15 @@ export default async function WriteupPage({
           <header className="mb-12 border-b pb-8">
             <div className="flex flex-wrap items-center gap-4 mb-6">
               <Badge variant="secondary" className="uppercase">
-                {category === 'ctf' ? dict.nav.ctf 
-                  : category === 'pentest-labs' ? dict.nav.pentest
-                  : category === 'walkthroughs' ? dict.nav.walkthroughs
-                  : category.replace('-', ' ')}
+                {category === 'ctf'
+                  ? dict.nav.ctf
+                  : category === 'pentest-labs'
+                    ? dict.nav.pentest
+                    : category === 'walkthroughs'
+                      ? dict.nav.walkthroughs
+                      : category.replace('-', ' ')}
               </Badge>
-              {writeup.metadata.difficulty && (
-                <Badge>{writeup.metadata.difficulty}</Badge>
-              )}
+              {writeup.metadata.difficulty && <Badge>{writeup.metadata.difficulty}</Badge>}
               <div className="flex items-center text-sm text-muted-foreground">
                 <Calendar className="w-4 h-4 mr-2" />
                 {writeup.metadata.date}
@@ -69,6 +71,9 @@ export default async function WriteupPage({
           <div className="prose prose-invert prose-slate max-w-none prose-headings:scroll-mt-20 prose-table:border prose-table:border-collapse prose-th:border prose-td:border prose-th:p-2 prose-td:p-2">
             <MDXRemote
               source={writeup.content}
+              components={{
+                pre: ({ children, ...props }: any) => <CodeBlock {...props}>{children}</CodeBlock>,
+              }}
               options={{
                 mdxOptions: {
                   remarkPlugins: [remarkGfm],
