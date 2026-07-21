@@ -1,0 +1,110 @@
+---
+title: "Off-Log #01 : 20 Labs. Et maintenant ?"
+date: "21-07-2026"
+tags:
+  [
+    "Off-Log",
+    "Recap",
+    "Expérience",
+    "Cybersécurité",
+    "Apprentissage",
+    "Milestone",
+  ]
+category: "walkthroughs"
+lang: "fr"
+description: "Le cap des 20 labs. Pas un bilan de techniques, pas une liste de flags. Juste ce que ça fait d'arriver là, ce qu'on apprend sur soi-même, et pourquoi la suite s'annonce différente."
+---
+
+## 20.
+
+Pas 19. Pas 21. 20.
+
+C'est un chiffre rond et les chiffres ronds méritent qu'on s'arrête dessus une seconde. Pas pour se féliciter, pas pour poser une médaille sur le mur. Juste pour regarder en arrière et voir le chemin parcouru avant de regarder en avant et voir ce qui reste à faire.
+
+Et il reste beaucoup.
+
+---
+
+## Ce que Ces 20 Labs Représentent Vraiment
+
+Quelqu'un qui regarde ce site de l'extérieur voit des writeups. Des commandes, des CVE, des flags. C'est ce qui est visible.
+
+Ce qui ne l'est pas, c'est le temps passé à fixer un écran qui ne répond pas. Les hypothèses lancées dans le vide. Les sessions où après deux heures de travail, tu n'as rien de plus qu'au départ et tu te demandes si tu as choisi le bon domaine.
+
+Il y a eu des labs faciles qui ont pris des jours. Il y a eu des labs difficiles qui ont cliqué en 20 minutes. La difficulté affichée sur la plateforme et la difficulté ressentie sont deux choses très différentes, et personne ne te prévient de ça.
+
+Ce que ces 20 labs représentent vraiment, c'est 20 fois où j'ai choisi de continuer plutôt que de fermer l'ordinateur.
+
+---
+
+## Ce que J'ai Appris sur Moi-même
+
+Pas sur la cybersécurité. Sur moi.
+
+L'apprentissage le plus important, c'est **comment je pense**.
+
+**L'écriture comme débogueur.** J'apprends mieux quand j'écris. C'est pas quelque chose que je n'avais pas assez pratiqué avant ce projet. Je pensais que comprendre et savoir expliquer c'était la même chose. Ça ne l'est pas. Plusieurs fois, j'ai cru avoir compris un mécanisme jusqu'au moment où j'ai essayé de le rédiger et je me suis rendu compte que je ne savais pas comment l'expliquer. Ce moment-là, c'est le moment où l'apprentissage réel commence. L'écriture a été mon meilleur débogueur.
+
+**L'impatience.** J'ai aussi appris que je suis impatient. Pas dans la vie en général, mais face à une cible. J'ai envie de lancer des outils avant d'avoir fini de lire la page. J'ai envie d'exploiter avant d'avoir compris. Ces 20 labs m'ont forcé à ralentir, parce que les fois où j'ai été trop rapide, j'ai raté des choses évidentes qui m'ont coûté des heures.
+
+Plus d'une fois, la réponse était sous mes yeux depuis le début. Un détail dans une page, un indice dans un nom de fichier, une sortie que je n'avais pas lue jusqu'au bout. L'impatience ne fait pas perdre des secondes. Elle fait perdre des heures.
+
+---
+
+## Ce qui M'a Marqué Techniquement
+
+Pas les techniques les plus impressionnantes. Les plus révélatrices.
+
+**La fragilité des chaînes de confiance.** [BombThreat](/pentest-labs/lab-bombthreat) : Une injection SQL pour passer le login, un code MFA renvoyé en clair dans la réponse du serveur, puis un JWT signé avec `alg=none` pour escalader les privilèges jusqu'au bout. Aucune de ces failles n'est spectaculaire en isolation. Mais enchaînées, elles donnent un accès total. Ce lab m'a appris que la sécurité d'un système ne vaut que celle de son maillon le plus faible, et que les maillons faibles se trouvent souvent là où un développeur a pensé "ce n'est pas grave, c'est juste un détail".
+
+**Les vulnérabilités là où on ne les cherche pas.** Le lab [Filename](/pentest-labs/lab-filename) m'a appris que l'injection ne vit pas seulement dans les formulaires classiques. Injecter de la logique directement dans le nom d'un fichier uploadé et voir les données de la base apparaître dans un index c'est le genre de vecteur qu'on ne cherche pas spontanément. [Inked](/pentest-labs/lab-inked) m'a appris la même leçon sous un autre angle : la confiance aveugle accordée à des valeurs que le client peut modifier ouvre des classes entières de vulnérabilités.
+
+La leçon commune : les failles les plus marquantes ne sont pas les plus complexes. Ce sont celles qui révèlent à quel point la sécurité dépend de ce qu'on choisit de vérifier ou de ne pas vérifier.
+
+---
+
+## L'Épreuve et l'Honnêteté
+
+[HookLink](/pentest-labs/range-hooklink/) Flag 4
+
+Je l'ai dit dans le writeup, je le répète ici parce que c'est important : j'ai consulté un blog externe après être resté bloqué. Et même en ayant la solution sous les yeux, j'ai mis du temps à comprendre pourquoi ça fonctionnait.
+
+Ce n'est pas la consultation qui me dérange. C'est ce que ça révèle : il y a des modes de pensée que je n'ai pas encore. Des connexions entre des informations qui pour d'autres sont naturelles et qui pour moi nécessitent encore un apprentissage.
+
+Ce n'est pas une faiblesse permanente. C'est un état temporaire. Mais je préfère le nommer plutôt que de faire semblant qu'il n'existe pas.
+
+---
+
+## Ce qui Vient
+
+Une feuille de route commence à se dessiner.
+
+**Active Directory d'abord.** Les 4 labs AD que j'ai réalisés m'ont donné le goût, mais je n'ai fait qu'effleurer la surface. BloodHound, les attaques de délégation, les chemins d'attaque complexes dans un AD réel : c'est ce qui m'attend.
+
+**Le Web ensuite.** Les bases sont posées, mais je veux creuser plus loin la logique métier et l'exploitation avancée.
+
+Il y a aussi AWS, le pentesting d'IA et d'autres domaines, mais chaque sujet demande du temps et de la rigueur. Pour l'instant, cap sur l'AD et le Web.
+
+**Les certifications viendront.** Je ne fixe pas de dates. Dans ce domaine, les échéances sont souvent bousculées par la réalité du terrain. Mais elles arrivent.
+
+La suite comportera peut-être moins de labs, au profit d'un travail théorique plus approfondi. Je choisis toujours de comprendre. C'est plus lent. C'est la seule façon que je connaisse.
+
+---
+
+## Pour Finir
+
+20 labs. Des centaines d'heures.
+
+Je suis un étudiant en cybersécurité qui apprend comme il peut. Je n'ai pas de mentorat formel, pas de bootcamp, pas de certification au mur.
+
+Ce que j'ai, c'est la curiosité. Et l'honnêteté d'écrire ce que je ne comprends pas encore, à côté de ce que je commence à maîtriser.
+
+ZNote n'est pas fini. Il ne sera probablement jamais fini, et c'est très bien comme ça. Un journal de bord qui se termine, c'est un journal de bord dont l'auteur a arrêté d'apprendre.
+
+J'ai pas arrêté.
+
+`Z>_`
+
+---
+
+_Rédigé avec un peu de recul et beaucoup de tabs ouverts par **Zcook**_
