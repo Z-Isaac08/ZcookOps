@@ -68,7 +68,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
         {categories.map(category => (
           <Link key={category.id} href={`/${lang}/${category.id}`}>
             <Card className="h-full border-border/50 bg-card/30 backdrop-blur-sm transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/30 group">
