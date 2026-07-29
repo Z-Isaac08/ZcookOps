@@ -34,6 +34,11 @@
       }
     }
   },
+  "search": {
+    "placeholder": "Rechercher un writeup...",
+    "noResults": "Aucun résultat",
+    "hint": "Recherche"
+  },
   "about": {
     "title": "À propos de l'auteur",
     "description1": "Salut ! Moi c'est **ZCook**. Actuellement étudiant en Master Cybersécurité & IA à l'ESATIC, je consacre mon temps libre au pentesting, au développement d'outils de sécurité intelligents et à l'étude des vecteurs d'attaque modernes.",

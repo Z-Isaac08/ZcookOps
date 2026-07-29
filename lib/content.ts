@@ -46,6 +46,12 @@ export function getWriteupsByCategory(category: string, lang: string) {
     );
 }
 
+const categories = ["ctf", "pentest-labs", "walkthroughs"] as const;
+
+export function getAllWriteups(lang: string): WriteupMetadata[] {
+  return categories.flatMap((category) => getWriteupsByCategory(category, lang));
+}
+
 export function getWriteup(category: string, slug: string) {
   const fullPath = path.join(contentDirectory, category, `${slug}.mdx`);
 

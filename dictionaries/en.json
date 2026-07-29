@@ -34,6 +34,11 @@
       }
     }
   },
+  "search": {
+    "placeholder": "Search writeups...",
+    "noResults": "No results found",
+    "hint": "Search"
+  },
   "about": {
     "title": "About the author",
     "description1": "Hi! I'm **ZCook**. Currently a Cybersecurity & AI Master's student at ESATIC, I spend my free time on pentesting, developing smart security tools, and studying modern attack vectors.",

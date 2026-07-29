@@ -2,9 +2,12 @@ import { Locale, getDictionary } from '@/lib/i18n';
 import Link from 'next/link';
 import Image from 'next/image';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { SearchDialog } from './SearchDialog';
+import { getAllWriteups } from '@/lib/content';
 
 export async function Header({ lang }: { lang: Locale }) {
   const dict = await getDictionary(lang);
+  const writeups = getAllWriteups(lang);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
@@ -36,6 +39,7 @@ export async function Header({ lang }: { lang: Locale }) {
         </nav>
 
         <div className="flex items-center space-x-4">
+          <SearchDialog writeups={writeups} lang={lang} dict={dict.search} />
           <LanguageSwitcher currentLang={lang} />
         </div>
       </div>

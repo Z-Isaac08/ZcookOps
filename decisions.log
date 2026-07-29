@@ -78,3 +78,16 @@
 **Decision:** Deleted the `content/network-labs/` directory and its contents (`ipv4-ipv6-addressing.mdx`, `linux-adds.mdx`). Updated Header navigation, home page category cards, and dynamic category page routing validation to exclude `network-labs`. Rewrote author description to focus on offensive/AI security.
 **Reasoning:** The user decided that networking architecture was out of place and wanted to concentrate strictly on offensive security/pentesting/CTFs.
 **Status:** Active
+
+---
+
+## 2026-07-29 — Global Search Command Palette
+
+**Task:** Add a global search across all writeup categories (pentest-labs, walkthroughs, ctf).
+**Decision:** Command palette (Ctrl+K / Cmd+K) in the navbar. Client-side filtering on title + tags. No external search lib — simple `filter` + `includes` is sufficient for ~25 writeups. Results grouped by category, direct navigation to writeup on click.
+**Alternatives considered:**
+- Inline search field always visible in navbar (rejected: takes too much space)
+- Full-text search on MDX body (rejected: user chose title + tags only)
+- Fuse.js / Algolia (rejected: overkill for current volume)
+**Files changed:** `lib/content.ts` (new `getAllWriteups()`), `components/SearchDialog.tsx` (new), `components/Header.tsx` (integration), `dictionaries/fr.json` + `en.json` (search keys), `components/ui/dialog.tsx` (shadcn install).
+**Status:** Active
