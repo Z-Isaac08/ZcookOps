@@ -91,3 +91,20 @@
 - Fuse.js / Algolia (rejected: overkill for current volume)
 **Files changed:** `lib/content.ts` (new `getAllWriteups()`), `components/SearchDialog.tsx` (new), `components/Header.tsx` (integration), `dictionaries/fr.json` + `en.json` (search keys), `components/ui/dialog.tsx` (shadcn install).
 **Status:** Active
+
+---
+
+## 2026-08-08 - Build-Time Indexing and Category Filtering Optimizations
+
+**Task:** Improve content loading performance (solve I/O bottleneck) and enhance UI/UX with search, category filtering, lazy-loaded screenshots, pagination, and related recommendations.
+**Decision:**
+- Created a Node script `scripts/generate-index.js` that compiles all MDX frontmatter metadata (including calculated reading time and platform attributes) into a single `content/index.json` during build and development.
+- Modified `lib/content.ts` to load listing views from `index.json` in-memory.
+- Created `components/CategoryList.tsx` (client component) providing real-time client-side search, platform filter, tag filters, featured posts grid (latest 3 posts), and client-side pagination.
+- Added custom MDX `img` component mapping standard markdown images to stylized, lazy-loaded screenshots to prevent CLS.
+- Added similar article suggestions using tag overlap correlation.
+**Alternatives considered:**
+- Physical image files conversion to WebP/AVIF (rejected by user preference).
+- Fuse.js / client-side search library (rejected: client-side filter is faster and zero-dependency for ~30 posts).
+**Status:** Active
+

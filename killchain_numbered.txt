@@ -1,0 +1,8 @@
+lab-arasaka.mdx
+    1. Reconnaissance (RustScan & BloodHound)
+    2. Premier Accès (Kerberoasting)
+    3. Escalade Horizontale via ACLs (bloodyAD)
+    4. Targeted Kerberoasting (bloodyAD / Impacket)
+    5. Audit AD CS (Certipy)
+    6. Exploitation ESC1 (Certipy)
+    7. Prise de Contrôle Totale (LDAP / Evil-WinRM)

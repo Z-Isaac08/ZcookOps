@@ -48,5 +48,22 @@
       "pentest": "Pentest",
       "ai": "IA & Cyber"
     }
+  },
+  "categoryList": {
+    "searchPlaceholder": "Rechercher par titre, tag, description...",
+    "filterPlatform": "Plateforme",
+    "filterTag": "Tags",
+    "allPlatforms": "Toutes",
+    "allTags": "Tous",
+    "latestWriteups": "Dernières publications",
+    "allWriteups": "Tous les articles",
+    "clearFilters": "Réinitialiser",
+    "pageOf": "sur",
+    "prev": "Précédent",
+    "next": "Suivant"
+  },
+  "writeupPage": {
+    "readingTime": "de lecture",
+    "similarArticles": "Sur le même sujet"
   }
 }

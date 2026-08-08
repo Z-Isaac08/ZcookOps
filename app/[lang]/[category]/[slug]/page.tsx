@@ -1,9 +1,10 @@
 import { CodeBlock } from '@/components/CodeBlock';
 import { TableOfContents } from '@/components/TableOfContents';
 import { Badge } from '@/components/ui/badge';
-import { getWriteup } from '@/lib/content';
+import { WriteupCard } from '@/components/WriteupCard';
+import { getWriteup, getSimilarWriteups } from '@/lib/content';
 import { Locale, getDictionary } from '@/lib/i18n';
-import { Calendar, Tag } from 'lucide-react';
+import { Calendar, Tag, Clock } from 'lucide-react';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import { notFound } from 'next/navigation';
 import rehypeSlug from 'rehype-slug';
@@ -26,14 +27,16 @@ export default async function WriteupPage({
     notFound();
   }
 
+  const similarWriteups = getSimilarWriteups(category, slug, lang, 2);
+
   return (
-    <div className="container mx-auto px-4 py-16 grow max-w-7xl">
+    <div className="container mx-auto px-4 py-16 grow max-w-7xl animate-fade-in">
       <div className="flex flex-col lg:flex-row gap-12">
         {/* Main Content */}
         <article className="grow max-w-4xl min-w-0">
           <header className="mb-12 border-b pb-8">
-            <div className="flex flex-wrap items-center gap-4 mb-6">
-              <Badge variant="secondary" className="uppercase">
+            <div className="flex flex-wrap items-center gap-6 mb-6">
+              <Badge variant="secondary" className="uppercase font-bold tracking-wider">
                 {category === 'ctf'
                   ? dict.nav.ctf
                   : category === 'pentest-labs'
@@ -42,37 +45,63 @@ export default async function WriteupPage({
                       ? dict.nav.walkthroughs
                       : category.replace('-', ' ')}
               </Badge>
-              {writeup.metadata.difficulty && <Badge>{writeup.metadata.difficulty}</Badge>}
-              <div className="flex items-center text-sm text-muted-foreground">
-                <Calendar className="w-4 h-4 mr-2" />
-                {writeup.metadata.date}
+              {writeup.metadata.difficulty && (
+                <Badge className="uppercase font-bold tracking-wider">{writeup.metadata.difficulty}</Badge>
+              )}
+              {writeup.metadata.platform && (
+                <Badge variant="outline" className="uppercase font-bold tracking-wider bg-primary/5 text-primary border-primary/20">
+                  {writeup.metadata.platform}
+                </Badge>
+              )}
+              <div className="flex items-center text-sm text-muted-foreground gap-4">
+                <div className="flex items-center">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  {writeup.metadata.date}
+                </div>
+                {writeup.metadata.readingTime && (
+                  <div className="flex items-center">
+                    <Clock className="w-4 h-4 mr-2" />
+                    {writeup.metadata.readingTime} min
+                  </div>
+                )}
               </div>
             </div>
 
-            <h1 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight text-foreground">
               {writeup.metadata.title}
             </h1>
 
-            <p className="text-xl text-muted-foreground mb-6">{writeup.metadata.description}</p>
+            <p className="text-xl text-muted-foreground mb-6 leading-relaxed">{writeup.metadata.description}</p>
 
             <div className="flex flex-wrap gap-2">
               {writeup.metadata.tags.map(tag => (
                 <div
                   key={tag}
-                  className="flex items-center text-xs bg-muted px-3 py-1 rounded-full"
+                  className="flex items-center text-xs bg-muted px-3 py-1.5 rounded-full text-muted-foreground border border-border/40 hover:text-foreground transition-colors"
                 >
-                  <Tag className="w-3 h-3 mr-2" />
+                  <Tag className="w-3 h-3 mr-2 text-primary/60" />
                   {tag}
                 </div>
               ))}
             </div>
           </header>
 
-          <div className="prose prose-invert prose-slate max-w-none prose-headings:scroll-mt-20 prose-table:border prose-table:border-collapse prose-th:border prose-td:border prose-th:p-2 prose-td:p-2">
+          <div className="prose prose-invert prose-slate max-w-none prose-headings:scroll-mt-20 prose-table:border prose-table:border-collapse prose-th:border prose-td:border prose-th:p-2 prose-td:p-2 leading-relaxed">
             <MDXRemote
               source={writeup.content}
               components={{
                 pre: ({ children, ...props }: any) => <CodeBlock {...props}>{children}</CodeBlock>,
+                img: ({ src, alt, ...props }: any) => (
+                  <span className="block my-8 overflow-hidden rounded-xl border border-border/50 bg-muted/20 relative group shadow-md shadow-primary/2">
+                    <img
+                      src={src}
+                      alt={alt || "Screenshot"}
+                      loading="lazy"
+                      className="mx-auto max-h-[550px] w-auto object-contain rounded-xl transition-all duration-300 group-hover:scale-[1.01]"
+                      {...props}
+                    />
+                  </span>
+                )
               }}
               options={{
                 mdxOptions: {
@@ -82,6 +111,20 @@ export default async function WriteupPage({
               }}
             />
           </div>
+
+          {/* Similar Articles */}
+          {similarWriteups.length > 0 && (
+            <div className="mt-16 pt-8 border-t border-border/30">
+              <h2 className="text-2xl font-bold mb-6 text-foreground">
+                {dict.writeupPage.similarArticles}
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {similarWriteups.map(w => (
+                  <WriteupCard key={w.slug} writeup={w} lang={lang} />
+                ))}
+              </div>
+            </div>
+          )}
         </article>
 
         {/* Sidebar / TOC */}
