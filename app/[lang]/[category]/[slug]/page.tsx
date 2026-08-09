@@ -2,9 +2,9 @@ import { CodeBlock } from '@/components/CodeBlock';
 import { TableOfContents } from '@/components/TableOfContents';
 import { Badge } from '@/components/ui/badge';
 import { WriteupCard } from '@/components/WriteupCard';
-import { getWriteup, getSimilarWriteups } from '@/lib/content';
+import { getSimilarWriteups, getWriteup } from '@/lib/content';
 import { Locale, getDictionary } from '@/lib/i18n';
-import { Calendar, Tag, Clock } from 'lucide-react';
+import { Calendar, Clock, Tag } from 'lucide-react';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import { notFound } from 'next/navigation';
 import rehypeSlug from 'rehype-slug';
@@ -46,10 +46,15 @@ export default async function WriteupPage({
                       : category.replace('-', ' ')}
               </Badge>
               {writeup.metadata.difficulty && (
-                <Badge className="uppercase font-bold tracking-wider">{writeup.metadata.difficulty}</Badge>
+                <Badge className="uppercase font-bold tracking-wider">
+                  {writeup.metadata.difficulty}
+                </Badge>
               )}
               {writeup.metadata.platform && (
-                <Badge variant="outline" className="uppercase font-bold tracking-wider bg-primary/5 text-primary border-primary/20">
+                <Badge
+                  variant="outline"
+                  className="uppercase font-bold tracking-wider bg-primary/5 text-primary border-primary/20"
+                >
                   {writeup.metadata.platform}
                 </Badge>
               )}
@@ -71,7 +76,9 @@ export default async function WriteupPage({
               {writeup.metadata.title}
             </h1>
 
-            <p className="text-xl text-muted-foreground mb-6 leading-relaxed">{writeup.metadata.description}</p>
+            <p className="text-xl text-muted-foreground mb-6 leading-relaxed">
+              {writeup.metadata.description}
+            </p>
 
             <div className="flex flex-wrap gap-2">
               {writeup.metadata.tags.map(tag => (
@@ -92,16 +99,14 @@ export default async function WriteupPage({
               components={{
                 pre: ({ children, ...props }: any) => <CodeBlock {...props}>{children}</CodeBlock>,
                 img: ({ src, alt, ...props }: any) => (
-                  <span className="block my-8 overflow-hidden rounded-xl border border-border/50 bg-muted/20 relative group shadow-md shadow-primary/2">
-                    <img
-                      src={src}
-                      alt={alt || "Screenshot"}
-                      loading="lazy"
-                      className="mx-auto max-h-[550px] w-auto object-contain rounded-xl transition-all duration-300 group-hover:scale-[1.01]"
-                      {...props}
-                    />
-                  </span>
-                )
+                  <img
+                    src={src}
+                    alt={alt || 'Screenshot'}
+                    loading="lazy"
+                    className="mx-auto block my-8 max-h-137.5 w-auto object-contain transition-all duration-300"
+                    {...props}
+                  />
+                ),
               }}
               options={{
                 mdxOptions: {

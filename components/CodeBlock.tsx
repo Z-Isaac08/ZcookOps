@@ -10,6 +10,7 @@ interface CodeBlockProps {
 
 export function CodeBlock({ children, className }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   const extractText = (node: React.ReactNode): string => {
     if (typeof node === 'string') return node;
@@ -23,6 +24,8 @@ export function CodeBlock({ children, className }: CodeBlockProps) {
   };
 
   const code = extractText(children);
+  const lines = code.split(/\r?\n/);
+  const shouldCollapse = lines.length > 14;
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(code);
@@ -32,9 +35,32 @@ export function CodeBlock({ children, className }: CodeBlockProps) {
 
   return (
     <div className="relative group">
-      <pre className={className}>
+      <pre
+        className={[
+          'm-0 overflow-x-auto p-4 text-sm leading-6',
+          shouldCollapse && !expanded ? 'max-h-72 overflow-y-hidden' : 'max-h-none',
+          className,
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
         <code>{children}</code>
       </pre>
+
+      {shouldCollapse && !expanded && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-linear-to-t from-slate-950 via-slate-950/80 to-transparent" />
+      )}
+
+      {shouldCollapse && (
+        <button
+          type="button"
+          onClick={() => setExpanded(prev => !prev)}
+          className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full border border-border/60 bg-slate-900/90 px-3 py-1.5 text-xs font-medium text-slate-200 shadow-lg backdrop-blur transition hover:bg-slate-800"
+        >
+          {expanded ? 'Afficher moins' : 'Afficher plus'}
+        </button>
+      )}
+
       <button
         onClick={handleCopy}
         className="absolute top-2 right-2 p-2 rounded-md bg-slate-700 hover:bg-slate-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200"

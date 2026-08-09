@@ -1,5 +1,58 @@
 [
   {
+    "slug": "lab-shadowgate-2",
+    "title": "Lab Shadowgate 2 : Coercition NTLM en Chaîne, Restauration AD et ESC3/ESC7 vers l'Administrateur du Domaine",
+    "date": "09-08-2026",
+    "tags": [
+      "Active Directory",
+      "SQL Injection",
+      "NTLM Coercion",
+      "Responder",
+      "BloodHound",
+      "GenericAll",
+      "WriteOwner",
+      "AD Recycle Bin",
+      "ADCS",
+      "ESC3",
+      "ESC7",
+      "Certipy",
+      "MSSQL",
+      "HackSmarter",
+      "Windows",
+      "Pentest"
+    ],
+    "category": "pentest-labs",
+    "lang": "fr",
+    "description": "Pentest Active Directory complet démarrant d'un simple portail web développeur : injection SQL pour contourner l'authentification, coercition NTLM répétée (upload de fichier puis xp_dirtree MSSQL) pour capturer deux comptes, double chaîne d'abus d'ACL (ForceChangePassword, WriteOwner, GenericAll) cartographiée avec BloodHound, contournement d'une restriction logonHours, restauration d'un compte depuis la corbeille Active Directory, puis élévation finale à l'Administrateur du domaine via un enchaînement ESC3 (Enrollment Agent) et ESC7 (droits CA mal répartis).",
+    "difficulty": "hard",
+    "platform": "HackSmarter",
+    "readingTime": 25
+  },
+  {
+    "slug": "acls",
+    "title": "DACLs : Comprendre et Exploiter les ACL Active Directory",
+    "date": "08-08-2026",
+    "tags": [
+      "Active Directory",
+      "ACL",
+      "GenericAll",
+      "GenericWrite",
+      "WriteDacl",
+      "WriteOwner",
+      "ForceChangePassword",
+      "RBCD",
+      "Shadow Credentials",
+      "DCSync",
+      "BloodHound",
+      "PowerView",
+      "bloodyAD"
+    ],
+    "category": "walkthroughs",
+    "lang": "fr",
+    "description": "Guide de référence complet sur les ACL Active Directory exploitables en pentest : théorie, découverte via BloodHound/PowerView/CLI native, exploitation pas à pas avec bloodyAD et Impacket, impact réel et détection côté défense, pour chaque droit majeur (GenericAll, GenericWrite, WriteDacl, WriteOwner, ForceChangePassword, AddMember, RBCD, Shadow Credentials, DCSync et plus).",
+    "readingTime": 21
+  },
+  {
     "slug": "lab-arasaka",
     "title": "Lab Arasaka : Kerberoasting, Targeted Kerberoasting et ESC1 via LDAP Shell vers l'Administrateur du Domaine",
     "date": "07-08-2026",
@@ -499,7 +552,7 @@
     "description": "Compromission d'un serveur Windows via une injection de commande dans les headers HTTP d'Apache Tika 1.17 (CVE-2018-1335), suivie d'une élévation de privilèges SYSTEM exploitant la mauvaise configuration GPO AlwaysInstallElevated.",
     "difficulty": "easy",
     "platform": "TryHackMe",
-    "readingTime": 9
+    "readingTime": 8
   },
   {
     "slug": "lab-hunter",
@@ -562,28 +615,6 @@
     "difficulty": "easy",
     "platform": "HackSmarter",
     "readingTime": 10
-  },
-  {
-    "slug": "metasploitable-2-initial-access",
-    "title": "Accès Initial sur Metasploitable 2 -Exploitation Samba CVE-2007-2447",
-    "date": "14-04-2026",
-    "tags": [
-      "Pentest",
-      "Metasploitable 2",
-      "Samba",
-      "CVE-2007-2447",
-      "Metasploit",
-      "RCE",
-      "SMB",
-      "Reconnaissance",
-      "Énumération"
-    ],
-    "category": "pentest-labs",
-    "lang": "fr",
-    "description": "Rapport technique complet de pentest sur Metasploitable 2 : reconnaissance ARP, scan exhaustif Nmap, énumération Samba, exploitation CVE-2007-2447 (username map script) via Metasploit et obtention d'un shell root direct.",
-    "difficulty": "easy",
-    "platform": "Lab VMware personnel",
-    "readingTime": 9
   },
   {
     "slug": "hashcat-vs-john",
