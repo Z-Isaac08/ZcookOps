@@ -1,5 +1,94 @@
 [
   {
+    "isFolder": true,
+    "slug": "os-dev-from-scratch",
+    "title": "Création d'un Système d'Exploitation x86 (OS Development)",
+    "date": "22-08-2026",
+    "tags": [
+      "OS Development",
+      "Assembly x86",
+      "C",
+      "Low-Level",
+      "Kernel",
+      "Bootloader",
+      "GDT"
+    ],
+    "category": "walkthroughs",
+    "lang": "fr",
+    "description": "Série de walkthroughs techniques pas à pas pour concevoir un système d'exploitation à partir de zéro : du Master Boot Record (MBR) au mode protégé 32 bits, la GDT, l'IDT et un noyau minimal en C.",
+    "difficulty": "insane",
+    "platform": "Bare Metal / QEMU",
+    "readingTime": 5,
+    "items": [
+      {
+        "slug": "01-bootloader-x86-real-mode",
+        "folderSlug": "os-dev-from-scratch",
+        "title": "Partie 1 : Écriture d'un Bootloader 16-bit en Assembleur NASM",
+        "date": "22-08-2026",
+        "tags": [
+          "OS Development",
+          "Assembly x86",
+          "Bootloader",
+          "BIOS",
+          "Real Mode"
+        ],
+        "category": "walkthroughs",
+        "lang": "fr",
+        "description": "Comprendre le processus d'amorçage du BIOS, le secteur MBR de 512 octets, l'organisation de la mémoire en Real Mode et créer un premier secteur d'amorce exécutable sous QEMU.",
+        "difficulty": "insane",
+        "platform": "Bare Metal / QEMU",
+        "readingTime": 2
+      },
+      {
+        "slug": "02-gdt-protected-mode-kernel-c",
+        "folderSlug": "os-dev-from-scratch",
+        "title": "Partie 2 : GDT, Passage en Mode Protégé (32 bits) et Kernel C",
+        "date": "22-08-2026",
+        "tags": [
+          "OS Development",
+          "GDT",
+          "Protected Mode",
+          "Kernel",
+          "C",
+          "VGA Memory"
+        ],
+        "category": "walkthroughs",
+        "lang": "fr",
+        "description": "Configuration de la Global Descriptor Table (GDT), basculement du processeur en mode protégé 32 bits, et lien avec un noyau écrit en C interagissant directement avec la mémoire VGA.",
+        "difficulty": "insane",
+        "platform": "Bare Metal / QEMU",
+        "readingTime": 3
+      }
+    ]
+  },
+  {
+    "isFolder": false,
+    "slug": "kerberos",
+    "title": "Kerberos : Le Protocole, les Internals et les Attaques en Environnement Active Directory",
+    "date": "10-08-2026",
+    "tags": [
+      "Active Directory",
+      "Kerberos",
+      "ASREPRoast",
+      "Kerberoasting",
+      "Golden Ticket",
+      "Silver Ticket",
+      "Diamond Ticket",
+      "Pass-the-Ticket",
+      "Overpass-the-Hash",
+      "Délégation",
+      "PKINIT",
+      "Skeleton Key",
+      "Rubeus",
+      "Mimikatz"
+    ],
+    "category": "walkthroughs",
+    "lang": "fr",
+    "description": "Guide de référence complet sur le protocole Kerberos en environnement Active Directory : théorie du protocole (échanges AS/TGS/AP, clés, PAC, PKINIT), attaques par cassage offline, forge de tickets, vol et réutilisation de credentials, abus de délégation, et détection, pensé pour comprendre chaque attaque au niveau du protocole plutôt qu'au niveau des commandes d'outils.",
+    "readingTime": 30
+  },
+  {
+    "isFolder": false,
     "slug": "lab-shadowgate-2",
     "title": "Lab Shadowgate 2 : Coercition NTLM en Chaîne, Restauration AD et ESC3/ESC7 vers l'Administrateur du Domaine",
     "date": "09-08-2026",
@@ -29,6 +118,7 @@
     "readingTime": 25
   },
   {
+    "isFolder": false,
     "slug": "acls",
     "title": "DACLs : Comprendre et Exploiter les ACL Active Directory",
     "date": "08-08-2026",
@@ -53,6 +143,7 @@
     "readingTime": 21
   },
   {
+    "isFolder": false,
     "slug": "lab-arasaka",
     "title": "Lab Arasaka : Kerberoasting, Targeted Kerberoasting et ESC1 via LDAP Shell vers l'Administrateur du Domaine",
     "date": "07-08-2026",
@@ -79,6 +170,7 @@
     "readingTime": 15
   },
   {
+    "isFolder": false,
     "slug": "lab-welcome",
     "title": "Lab Welcome : PDF Cracking, Password Spraying et ESC1 vers l'Administrateur du Domaine",
     "date": "06-08-2026",
@@ -99,11 +191,12 @@
     "category": "pentest-labs",
     "lang": "fr",
     "description": "Pentest Active Directory en scénario assumed breach avec des credentials de phishing : découverte d'un PDF protégé sur un partage RH révélant le mot de passe par défaut de l'entreprise, password spraying réussi sur un compte, abus d'une double chaîne d'ACL (GenericAll puis ForceChangePassword) cartographiée avec BloodHound, et élévation finale à l'Administrateur du domaine via une vulnérabilité ESC1 sur un template de certificat ADCS.",
-    "difficulty": "facile",
+    "difficulty": "easy",
     "platform": "HackSmarter",
     "readingTime": 11
   },
   {
+    "isFolder": false,
     "slug": "lab-solarix",
     "title": "Lab Solarix : Kerbrute, AS-REP Roasting et Abus d'ACL BloodHound vers SYSTEM via Potato",
     "date": "05-08-2026",
@@ -128,6 +221,7 @@
     "readingTime": 14
   },
   {
+    "isFolder": false,
     "slug": "lab-vulnnet-roasted",
     "title": "Lab VulnNet Roasted : RID Brute Force, ASREPRoast et Kerberoasting en Chaîne jusqu'au DCSync",
     "date": "29-07-2026",
@@ -151,6 +245,7 @@
     "readingTime": 14
   },
   {
+    "isFolder": false,
     "slug": "lab-vulnnet-active",
     "title": "Lab VulnNet Active : Redis NTLM Coercion, Script Hijacking et GodPotato",
     "date": "28-07-2026",
@@ -176,6 +271,7 @@
     "readingTime": 11
   },
   {
+    "isFolder": false,
     "slug": "20-lab-recap",
     "title": "Off-Log #01 : 20 Labs. Et maintenant ?",
     "date": "21-07-2026",
@@ -193,6 +289,7 @@
     "readingTime": 6
   },
   {
+    "isFolder": false,
     "slug": "lab-healthsmarter",
     "title": "Lab HealthSmarter : Credential Stuffing, MFA Bypass et Blind XSS vers le Panel Admin",
     "date": "17-07-2026",
@@ -216,6 +313,7 @@
     "readingTime": 10
   },
   {
+    "isFolder": false,
     "slug": "lab-ntdomix",
     "title": "Lab NtDomix : ASREP Roasting, Reverse XOR et DCSync vers l'Administration d'un DC",
     "date": "07-07-2026",
@@ -239,6 +337,7 @@
     "readingTime": 10
   },
   {
+    "isFolder": false,
     "slug": "lab-filename",
     "title": "Lab Filename : SQLi par Nom de Fichier FTP, Dump de Credentials et ftp Shell Escape",
     "date": "06-07-2026",
@@ -262,6 +361,7 @@
     "readingTime": 14
   },
   {
+    "isFolder": false,
     "slug": "lab-dockethive",
     "title": "Lab DocketHive : LFI via PHP Wrapper sur un Endpoint de Téléchargement Mal Filtré",
     "date": "05-07-2026",
@@ -284,6 +384,7 @@
     "readingTime": 4
   },
   {
+    "isFolder": false,
     "slug": "lab-soupe-decode",
     "title": "Lab SoupeDecode : RID Brute, Password Spraying, Kerberoasting et Pass-the-Hash vers SYSTEM",
     "date": "02-07-2026",
@@ -307,6 +408,7 @@
     "readingTime": 12
   },
   {
+    "isFolder": false,
     "slug": "lab-nullsec",
     "title": "Lab NullSec : Compromettre un Domaine Active Directory via ZeroLogon (CVE-2020-1472)",
     "date": "30-06-2026",
@@ -330,6 +432,7 @@
     "readingTime": 9
   },
   {
+    "isFolder": false,
     "slug": "range-hooklink",
     "title": "Range HookLink : 7 Flags sur une Stack Multi-Services de Dating App",
     "date": "19-06-2026",
@@ -352,6 +455,7 @@
     "readingTime": 13
   },
   {
+    "isFolder": false,
     "slug": "lab-newsforge",
     "title": "Lab NewsForge : OS Command Injection dans la Recherche et Bypass d'Autorisation",
     "date": "18-06-2026",
@@ -373,6 +477,7 @@
     "readingTime": 11
   },
   {
+    "isFolder": false,
     "slug": "lab-bombthreat",
     "title": "Lab BombThreat : SQLi + MFA Leak + JWT alg=none pour Désamorcer une Bombe Fictive",
     "date": "17-06-2026",
@@ -394,6 +499,7 @@
     "readingTime": 9
   },
   {
+    "isFolder": false,
     "slug": "lab-inked",
     "title": "Lab Inked : Password Reset Poisoning vers SSTI Twig et Shell sur un CRM de Salon de Tatouage",
     "date": "16-06-2026",
@@ -416,6 +522,7 @@
     "readingTime": 10
   },
   {
+    "isFolder": false,
     "slug": "lab-photostore",
     "title": "Lab PhotoStore : RCE via Injection de Commande dans les Métadonnées EXIF",
     "date": "16-06-2026",
@@ -437,6 +544,7 @@
     "readingTime": 8
   },
   {
+    "isFolder": false,
     "slug": "lab-martiniad",
     "title": "Lab MartiniAD : Fuite SMB, Kerberoasting et DCSync sur un Domaine Active Directory",
     "date": "14-06-2026",
@@ -461,6 +569,7 @@
     "readingTime": 12
   },
   {
+    "isFolder": false,
     "slug": "lab-tech-support",
     "title": "Lab Tech Support : Du Partage SMB Anonyme au Shell Root via Subrion CMS",
     "date": "13-06-2026",
@@ -485,6 +594,7 @@
     "readingTime": 10
   },
   {
+    "isFolder": false,
     "slug": "lab-shadowgate",
     "title": "Lab ShadowGate : Exploitation ADCS (ESC8) & Extraction krbtgt",
     "date": "25-05-2026",
@@ -509,6 +619,7 @@
     "readingTime": 16
   },
   {
+    "isFolder": false,
     "slug": "lab-exception",
     "title": "Lab Exception : Exploitation CVE-2021-22911 & PrivEsc Nano",
     "date": "17-05-2026",
@@ -532,6 +643,7 @@
     "readingTime": 11
   },
   {
+    "isFolder": false,
     "slug": "lab-cyberlens",
     "title": "Lab CyberLens : Exploitation Apache Tika & AlwaysInstallElevated",
     "date": "11-05-2026",
@@ -555,6 +667,7 @@
     "readingTime": 8
   },
   {
+    "isFolder": false,
     "slug": "lab-hunter",
     "title": "Lab Hunter : User Enumeration via Timing Attack",
     "date": "07-05-2026",
@@ -578,6 +691,7 @@
     "readingTime": 8
   },
   {
+    "isFolder": false,
     "slug": "lab-polution",
     "title": "Lab Polution : Prototype Pollution & Account Takeover",
     "date": "01-05-2026",
@@ -597,6 +711,7 @@
     "readingTime": 9
   },
   {
+    "isFolder": false,
     "slug": "lab-samurai",
     "title": "Lab Samurai : Exploitation Joomla & Élévation de Privilèges",
     "date": "29-04-2026",
@@ -617,6 +732,7 @@
     "readingTime": 10
   },
   {
+    "isFolder": false,
     "slug": "hashcat-vs-john",
     "title": "Hashcat vs John the Ripper : La Battle Finale",
     "date": "2026-05-11",
@@ -635,6 +751,7 @@
     "readingTime": 9
   },
   {
+    "isFolder": false,
     "slug": "hate-bin-exp",
     "title": "L'Exploitation Binaire : Le Domaine que je Déteste (Mais qui est Objectivement Impressionnant)",
     "date": "2026-05-11",
@@ -651,6 +768,7 @@
     "readingTime": 7
   },
   {
+    "isFolder": false,
     "slug": "who-is-zcook",
     "title": "Qui est ZCook ? (La Question que Personne n'a Posée Mais à laquelle Je Vais Répondre Quand Même)",
     "date": "2026-05-11",

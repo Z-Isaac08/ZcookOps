@@ -1,0 +1,64 @@
+---
+title: "Partie 1 : Écriture d'un Bootloader 16-bit en Assembleur NASM"
+date: "22-08-2026"
+tags: ["OS Development", "Assembly x86", "Bootloader", "BIOS", "Real Mode"]
+category: "walkthroughs"
+lang: "fr"
+description: "Comprendre le processus d'amorçage du BIOS, le secteur MBR de 512 octets, l'organisation de la mémoire en Real Mode et créer un premier secteur d'amorce exécutable sous QEMU."
+---
+
+## 1. Comment le BIOS démarre un Ordinateur
+
+Lorsque vous allumez une machine x86 :
+1. Le processeur démarre en **Real Mode (16 bits)** à l'adresse mémoire `0xFFFF0`.
+2. Le BIOS effectue le **POST** (Power-On Self-Test) et recherche un périphérique d'amorçage.
+3. Le BIOS lit le tout premier secteur (512 octets) du disque cible et le charge en RAM à l'adresse fixe **`0x7C00`**.
+4. Si les deux derniers octets (510 et 511) valent **`0x55`** et **`0xAA`**, le BIOS considère le secteur valide et saute à l'adresse `0x7C00` pour exécuter le code !
+
+## 2. Écriture du Bootloader (`boot.asm`)
+
+Voici le code assembleur NASM complet de notre bootloader 16 bits :
+
+```nasm
+[org 0x7c00]          ; Indique au compilateur l'adresse de chargement en RAM
+
+mov ah, 0x0e          ; Fonction télétype de l'interruption BIOS 0x10 (Afficher un caractère)
+mov bx, msg           ; Charger l'adresse du message dans BX
+
+print_loop:
+    mov al, [bx]      ; Charger le caractère pointé par BX dans AL
+    cmp al, 0         ; Vérifier si fin de chaîne (0)
+    je halt
+    int 0x10          ; Appeler l'interruption vidéo du BIOS
+    inc bx            ; Passer au caractère suivant
+    jmp print_loop
+
+halt:
+    cli               ; Désactiver les interruptions matérielles
+.loop:
+    hlt               ; Mettre le processeur en pause jusqu'au prochain signal
+    jmp .loop
+
+msg:
+    db "ZNote OS - Bootloader initialisé avec succès !", 0xd, 0xa, 0
+
+; Remplissage jusqu'à 510 octets avec des zéros
+times 510 - ($ - $$) db 0
+
+; Signature Magique MBR (2 octets)
+dw 0xaa55
+```
+
+## 3. Compilation et Éxecution avec QEMU
+
+Pour assembler notre bootloader brut et le lancer dans un émulateur QEMU :
+
+```bash
+# Compilation NASM en binaire brut (Flat Binary)
+nasm -f bin boot.asm -o boot.bin
+
+# Test avec l'émulateur QEMU
+qemu-system-x86_64 -drive format=raw,file=boot.bin
+```
+
+Félicitations ! Vous avez exécuté du code bas niveau directement sur le processeur, sans aucun système d'exploitation sous-jacent.

@@ -1,0 +1,14 @@
+{
+  "title": "Création d'un Système d'Exploitation x86 (OS Development)",
+  "description": "Série de walkthroughs techniques pas à pas pour concevoir un système d'exploitation à partir de zéro : du Master Boot Record (MBR) au mode protégé 32 bits, la GDT, l'IDT et un noyau minimal en C.",
+  "date": "22-08-2026",
+  "tags": ["OS Development", "Assembly x86", "C", "Low-Level", "Kernel", "Bootloader", "GDT"],
+  "category": "walkthroughs",
+  "lang": "fr",
+  "difficulty": "insane",
+  "platform": "Bare Metal / QEMU",
+  "order": [
+    "01-bootloader-x86-real-mode",
+    "02-gdt-protected-mode-kernel-c"
+  ]
+}

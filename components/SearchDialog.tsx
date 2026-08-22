@@ -140,7 +140,7 @@ export function SearchDialog({ writeups, lang, dict }: SearchDialogProps) {
 
       {/* Search dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-[540px] p-0 gap-0 overflow-hidden border-border bg-background/95 backdrop-blur-xl shadow-2xl">
+        <DialogContent className="max-w-135 p-0 gap-0 overflow-hidden border-border bg-background/95 backdrop-blur-xl shadow-2xl">
           <DialogTitle className="sr-only">{dict.hint}</DialogTitle>
 
           {/* Search input */}
@@ -169,7 +169,7 @@ export function SearchDialog({ writeups, lang, dict }: SearchDialogProps) {
           {/* Results */}
           <div
             ref={listRef}
-            className="max-h-[360px] overflow-y-auto py-2"
+            className="max-h-90 overflow-y-auto py-2"
           >
             {flatResults.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
