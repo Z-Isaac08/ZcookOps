@@ -170,7 +170,7 @@ export function MdxContent({ source }: { source: string }) {
             </th>
           ),
           td: ({ children, ...props }: any) => (
-            <td className="p-3 border-t border-border/40 border-r border-border/40 last:border-r-0 text-muted-foreground hover:text-foreground transition-colors" {...props}>
+            <td className="p-3 border-t border-border/40 border-r last:border-r-0 text-muted-foreground hover:text-foreground transition-colors" {...props}>
               {children}
             </td>
           ),

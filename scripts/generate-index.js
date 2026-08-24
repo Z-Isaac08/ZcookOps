@@ -3,7 +3,8 @@ const path = require('path');
 const matter = require('gray-matter');
 
 const contentDir = path.join(__dirname, '../content');
-const categories = ['ctf', 'pentest-labs', 'walkthroughs'];
+const categories = ['ctf', 'pentest-labs', 'playbooks'];
+
 
 function parseCustomDate(dateString) {
   const [day, month, year] = dateString.split("-").map(Number);
@@ -97,6 +98,7 @@ function generateIndex() {
           description: folderData.description || '',
           difficulty: folderData.difficulty,
           platform: folderData.platform,
+          image: folderData.image || undefined,
           readingTime: folderTotalReadingTime,
           items,
         });
@@ -120,9 +122,11 @@ function generateIndex() {
           description: data.description || '',
           difficulty: data.difficulty || undefined,
           platform: data.platform || undefined,
+          image: data.image || undefined,
           readingTime,
         });
       }
+
     }
   }
 

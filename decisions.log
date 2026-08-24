@@ -19,7 +19,7 @@
 ## 2026-04-29 -Content Organization by Type
 
 **Task:** Decide how to organize writeup content.
-**Decision:** Organize by type (CTF, Pentest Labs, Network Labs, Walkthroughs) rather than by platform.
+**Decision:** Organize by type (CTF, Pentest Labs, Network Labs, Playbooks) rather than by platform.
 **Alternatives considered:**
 - By platform + year like 0xb0b.gitbook.io (rejected: network labs are self-hosted, not tied to a platform)
 - Both dimensions as filterable (rejected: adds complexity without clear need yet)
@@ -83,7 +83,7 @@
 
 ## 2026-07-29 — Global Search Command Palette
 
-**Task:** Add a global search across all writeup categories (pentest-labs, walkthroughs, ctf).
+**Task:** Add a global search across all writeup categories (pentest-labs, playbooks, ctf).
 **Decision:** Command palette (Ctrl+K / Cmd+K) in the navbar. Client-side filtering on title + tags. No external search lib — simple `filter` + `includes` is sufficient for ~25 writeups. Results grouped by category, direct navigation to writeup on click.
 **Alternatives considered:**
 - Inline search field always visible in navbar (rejected: takes too much space)

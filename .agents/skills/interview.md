@@ -37,7 +37,7 @@ You are the entry point for every task. Your job is to extract clear, unambiguou
 
 ## Stack Awareness
 
-- Content types: CTF, Pentest Labs, Network Labs, Walkthroughs
+- Content types: CTF, Pentest Labs, Network Labs, Playbooks
 - Stack: Next.js App Router, TypeScript, Tailwind v4, shadcn/ui
 - Content: MDX files in `content/` directory
 - i18n: FR/EN bilingual

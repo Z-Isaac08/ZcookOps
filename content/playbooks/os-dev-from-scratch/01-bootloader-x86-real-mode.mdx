@@ -2,7 +2,7 @@
 title: "Partie 1 : Écriture d'un Bootloader 16-bit en Assembleur NASM"
 date: "22-08-2026"
 tags: ["OS Development", "Assembly x86", "Bootloader", "BIOS", "Real Mode"]
-category: "walkthroughs"
+category: "playbooks"
 lang: "fr"
 description: "Comprendre le processus d'amorçage du BIOS, le secteur MBR de 512 octets, l'organisation de la mémoire en Real Mode et créer un premier secteur d'amorce exécutable sous QEMU."
 ---
@@ -10,6 +10,7 @@ description: "Comprendre le processus d'amorçage du BIOS, le secteur MBR de 512
 ## 1. Comment le BIOS démarre un Ordinateur
 
 Lorsque vous allumez une machine x86 :
+
 1. Le processeur démarre en **Real Mode (16 bits)** à l'adresse mémoire `0xFFFF0`.
 2. Le BIOS effectue le **POST** (Power-On Self-Test) et recherche un périphérique d'amorçage.
 3. Le BIOS lit le tout premier secteur (512 octets) du disque cible et le charge en RAM à l'adresse fixe **`0x7C00`**.

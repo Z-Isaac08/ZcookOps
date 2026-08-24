@@ -11,7 +11,7 @@
     "home": "Dashboard",
     "ctf": "CTF Writeups",
     "pentest": "Pentest Labs",
-    "walkthroughs": "Off-Log"
+    "playbooks": "Playbooks"
   },
   "home": {
     "hero": {
@@ -28,12 +28,13 @@
         "title": "Pentesting Labs",
         "description": "Intrusion reports on target machines (HTB, THM) and vulnerable environments."
       },
-      "walkthroughs": {
-        "title": "Off-Log",
-        "description": "In-depth tutorials on tools, protocols, and cyber best practices."
+      "playbooks": {
+        "title": "Playbooks",
+        "description": "In-depth technical guides, procedures, and security concept documentation."
       }
     }
   },
+
   "search": {
     "placeholder": "Search writeups...",
     "noResults": "No results found",

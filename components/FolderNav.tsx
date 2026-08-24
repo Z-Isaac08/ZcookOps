@@ -27,8 +27,9 @@ export function FolderBreadcrumb({
   const categoryNames: Record<string, string> = {
     'ctf': 'CTF',
     'pentest-labs': 'Pentest Labs',
-    'walkthroughs': 'Walkthroughs',
+    'playbooks': 'Playbooks',
   };
+
 
   return (
     <nav aria-label="Breadcrumb" className="mb-6 flex flex-wrap items-center text-sm text-muted-foreground gap-2">

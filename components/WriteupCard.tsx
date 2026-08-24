@@ -46,7 +46,9 @@ export function WriteupCard({ writeup, lang }: { writeup: WriteupMetadata; lang:
                 <FileText className="w-2.5 h-2.5 text-primary/70" />
                 {lang === 'fr' ? 'Article' : 'Writeup'}
               </Badge>
-              {getDifficultyBadge(writeup.difficulty)}
+              {writeup.category !== 'playbooks' && getDifficultyBadge(writeup.difficulty)}
+
+
               {writeup.platform && (
                 <Badge
                   variant="secondary"

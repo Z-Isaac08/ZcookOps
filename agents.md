@@ -60,7 +60,7 @@ Interview → Architect → Builder → Critic
 | Area           | Convention                                                                     |
 | -------------- | ------------------------------------------------------------------------------ |
 | **Components** | `app/components/` -shadcn/ui as base, PascalCase filenames                     |
-| **Content**    | `content/{ctf,pentest-labs,walkthroughs}/` -MDX with frontmatter               |
+| **Content**    | `content/{ctf,pentest-labs,playbooks}/` -MDX with frontmatter                  |
 | **Styling**    | Tailwind v4 utility classes, dark mode default, theme tokens for customization |
 | **i18n**       | `dictionaries/{en,fr}.json` -simple namespace approach                         |
 | **Routing**    | Next.js App Router (`app/[lang]/...`) with locale prefix                       |

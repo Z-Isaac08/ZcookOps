@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://znote.isaacncho.tech'),
   title: 'ZNote',
-  description: 'Cybersecurity walkthroughs and writeups',
+  description: 'Cybersecurity playbooks and writeups',
   icons: {
     icon: '/favicon.ico',
     apple: '/favicon.ico',

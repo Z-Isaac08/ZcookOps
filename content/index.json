@@ -13,9 +13,9 @@
       "Bootloader",
       "GDT"
     ],
-    "category": "walkthroughs",
+    "category": "playbooks",
     "lang": "fr",
-    "description": "Série de walkthroughs techniques pas à pas pour concevoir un système d'exploitation à partir de zéro : du Master Boot Record (MBR) au mode protégé 32 bits, la GDT, l'IDT et un noyau minimal en C.",
+    "description": "Série de playbooks techniques pas à pas pour concevoir un système d'exploitation à partir de zéro : du Master Boot Record (MBR) au mode protégé 32 bits, la GDT, l'IDT et un noyau minimal en C.",
     "difficulty": "insane",
     "platform": "Bare Metal / QEMU",
     "readingTime": 5,
@@ -32,7 +32,7 @@
           "BIOS",
           "Real Mode"
         ],
-        "category": "walkthroughs",
+        "category": "playbooks",
         "lang": "fr",
         "description": "Comprendre le processus d'amorçage du BIOS, le secteur MBR de 512 octets, l'organisation de la mémoire en Real Mode et créer un premier secteur d'amorce exécutable sous QEMU.",
         "difficulty": "insane",
@@ -52,7 +52,7 @@
           "C",
           "VGA Memory"
         ],
-        "category": "walkthroughs",
+        "category": "playbooks",
         "lang": "fr",
         "description": "Configuration de la Global Descriptor Table (GDT), basculement du processeur en mode protégé 32 bits, et lien avec un noyau écrit en C interagissant directement avec la mémoire VGA.",
         "difficulty": "insane",
@@ -82,7 +82,7 @@
       "Rubeus",
       "Mimikatz"
     ],
-    "category": "walkthroughs",
+    "category": "playbooks",
     "lang": "fr",
     "description": "Guide de référence complet sur le protocole Kerberos en environnement Active Directory : théorie du protocole (échanges AS/TGS/AP, clés, PAC, PKINIT), attaques par cassage offline, forge de tickets, vol et réutilisation de credentials, abus de délégation, et détection, pensé pour comprendre chaque attaque au niveau du protocole plutôt qu'au niveau des commandes d'outils.",
     "readingTime": 30
@@ -137,7 +137,7 @@
       "PowerView",
       "bloodyAD"
     ],
-    "category": "walkthroughs",
+    "category": "playbooks",
     "lang": "fr",
     "description": "Guide de référence complet sur les ACL Active Directory exploitables en pentest : théorie, découverte via BloodHound/PowerView/CLI native, exploitation pas à pas avec bloodyAD et Impacket, impact réel et détection côté défense, pour chaque droit majeur (GenericAll, GenericWrite, WriteDacl, WriteOwner, ForceChangePassword, AddMember, RBCD, Shadow Credentials, DCSync et plus).",
     "readingTime": 21
@@ -283,7 +283,7 @@
       "Apprentissage",
       "Milestone"
     ],
-    "category": "walkthroughs",
+    "category": "playbooks",
     "lang": "fr",
     "description": "Le cap des 20 labs. Pas un bilan de techniques, pas une liste de flags. Juste ce que ça fait d'arriver là, ce qu'on apprend sur soi-même, et pourquoi la suite s'annonce différente.",
     "readingTime": 6
@@ -745,7 +745,7 @@
       "Password Cracking",
       "Walkthrough"
     ],
-    "category": "walkthroughs",
+    "category": "playbooks",
     "lang": "fr",
     "description": "Le match du siècle entre le vieux sage John et le monstre de puissance Hashcat. Qui va broyer tes hashes le plus vite ? Spoiler : c'est compliqué, et on va t'expliquer pourquoi avec des commandes et beaucoup trop d'analogies.",
     "readingTime": 9
@@ -762,7 +762,7 @@
       "GDB",
       "ELF"
     ],
-    "category": "walkthroughs",
+    "category": "playbooks",
     "lang": "fr",
     "description": "L'exploitation binaire c'est brillant, c'est puissant, c'est le summum de la compréhension système. C'est aussi de l'hexadécimal, des registres CPU, des ELF et des strings cryptiques. Et franchement j'aime pas ça. Voilà pourquoi.",
     "readingTime": 7
@@ -780,7 +780,7 @@
       "Côte d'Ivoire",
       "Origin Story"
     ],
-    "category": "walkthroughs",
+    "category": "playbooks",
     "lang": "fr",
     "description": "Une tentative sérieuse de répondre à une question existentielle : qui est ZCook ? Est-ce un hacker ? Un étudiant ? Un cuisinier ? Spoiler : c'est compliqué.",
     "readingTime": 5

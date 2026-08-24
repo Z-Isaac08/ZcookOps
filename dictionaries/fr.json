@@ -11,7 +11,7 @@
     "home": "Accueil",
     "ctf": "CTF & Challenges",
     "pentest": "Labs Pentest",
-    "walkthroughs": "Hors-Log"
+    "playbooks": "Playbooks"
   },
   "home": {
     "hero": {
@@ -28,12 +28,13 @@
         "title": "Labs Pentest",
         "description": "Rapports d'intrusion sur machines cibles (HTB, THM) et environnements vulnérables."
       },
-      "walkthroughs": {
-        "title": "Hors-Log",
-        "description": "Tutoriels approfondis sur les outils, les protocoles et les bonnes pratiques cyber."
+      "playbooks": {
+        "title": "Playbooks",
+        "description": "Guides techniques approfondis, procédures et documentation des concepts de sécurité."
       }
     }
   },
+
   "search": {
     "placeholder": "Rechercher un writeup...",
     "noResults": "Aucun résultat",

@@ -23,7 +23,7 @@ export function ScrollProgress() {
   return (
     <div className="fixed top-0 left-0 right-0 h-1 z-50 bg-muted/20">
       <div
-        className="h-full bg-gradient-to-r from-primary/80 via-primary to-primary transition-all duration-150 ease-out"
+        className="h-full bg-linear-to-r from-primary/80 via-primary to-primary transition-all duration-150 ease-out"
         style={{ width: `${scrollPercentage}%` }}
       />
     </div>

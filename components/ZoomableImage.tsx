@@ -29,7 +29,7 @@ export function ZoomableImage({ src, alt, ...props }: any) {
 
       {isOpen && (
         <span
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-in cursor-zoom-out block"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-in cursor-zoom-out"
           onClick={() => setIsOpen(false)}
         >
           <button

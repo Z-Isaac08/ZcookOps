@@ -1,15 +1,17 @@
-import { FolderBreadcrumb } from '@/components/FolderNav';
 import { FolderCard } from '@/components/FolderCard';
+import { FolderBreadcrumb } from '@/components/FolderNav';
 import { MdxContent } from '@/components/MdxContent';
 import { ScrollProgress } from '@/components/ScrollProgress';
 import { TableOfContents } from '@/components/TableOfContents';
 import { Badge } from '@/components/ui/badge';
 import { WriteupCard } from '@/components/WriteupCard';
+import { ZoomableImage } from '@/components/ZoomableImage';
 import { getFolder, getSimilarWriteups, getWriteup } from '@/lib/content';
 import { Locale, getDictionary } from '@/lib/i18n';
-import { ArrowRight, Calendar, Clock, Folder, Layers, Tag } from 'lucide-react';
+import { ArrowRight, Calendar, Clock, Folder, Layers, Network, Tag } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+
 
 export default async function WriteupPage({
 
@@ -44,11 +46,13 @@ export default async function WriteupPage({
               <Layers className="w-3.5 h-3.5 text-primary" />
               {folder.items.length} {lang === 'fr' ? (folder.items.length > 1 ? 'chapitres' : 'chapitre') : (folder.items.length > 1 ? 'chapters' : 'chapter')}
             </Badge>
-            {folder.difficulty && (
+            {folder.category !== 'playbooks' && folder.difficulty && (
               <Badge variant="outline" className="uppercase font-bold tracking-wider">
                 {folder.difficulty}
               </Badge>
             )}
+
+
             {folder.platform && (
               <Badge
                 variant="outline"
@@ -90,7 +94,18 @@ export default async function WriteupPage({
               </div>
             ))}
           </div>
+
+          {folder.image && (
+            <div className="mt-8 pt-6 border-t border-border/40">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+                <Network className="w-4 h-4 text-primary" />
+                {lang === 'fr' ? 'Topologie & Schéma du Lab' : 'Lab Network Topology'}
+              </span>
+              <ZoomableImage src={folder.image} alt={`Topologie - ${folder.title}`} />
+            </div>
+          )}
         </div>
+
 
         {/* Chapter Index Section */}
         <section className="mb-16">
@@ -168,15 +183,17 @@ export default async function WriteupPage({
                     ? dict.nav.ctf
                     : category === 'pentest-labs'
                       ? dict.nav.pentest
-                      : category === 'walkthroughs'
-                        ? dict.nav.walkthroughs
+                      : category === 'playbooks'
+                        ? dict.nav.playbooks
                         : category.replace('-', ' ')}
                 </Badge>
-                {writeup.metadata.difficulty && (
+                {category !== 'playbooks' && writeup.metadata.difficulty && (
                   <Badge className="uppercase font-bold tracking-wider">
                     {writeup.metadata.difficulty}
                   </Badge>
                 )}
+
+
                 {writeup.metadata.platform && (
                   <Badge
                     variant="outline"

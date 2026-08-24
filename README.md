@@ -16,7 +16,7 @@ Les articles sont organisés par catégories dans le dossier `content/` :
 
 - `ctf/` : Analyses de challenges et compétitions.
 - `pentest-labs/` : Rapports d'intrusion (Metasploitable, TryHackMe, HTB).
-- `walkthroughs/` : Guides méthodologiques et explorations de RFC.
+- `playbooks/` : Guides méthodologiques et explorations de RFC.
 
 ## 🛠️ Installation & Développement
 

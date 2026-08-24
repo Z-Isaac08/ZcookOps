@@ -11,7 +11,7 @@ export default async function CategoryPage({
 }) {
   const { lang, category } = (await params) as { lang: Locale; category: string };
 
-  const validCategories = ['ctf', 'pentest-labs', 'walkthroughs'];
+  const validCategories = ['ctf', 'pentest-labs', 'playbooks'];
   if (!validCategories.includes(category)) {
     notFound();
   }
@@ -22,8 +22,9 @@ export default async function CategoryPage({
   const categoryTitles: Record<string, string> = {
     'ctf': dict.nav.ctf,
     'pentest-labs': dict.nav.pentest,
-    'walkthroughs': dict.nav.walkthroughs,
+    'playbooks': dict.nav.playbooks,
   };
+
 
   return (
     <main className="container mx-auto px-4 py-12 grow max-w-7xl">

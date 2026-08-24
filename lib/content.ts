@@ -19,6 +19,7 @@ export interface WriteupMetadata {
   folderSlug?: string;
   platform?: string;
   readingTime?: number;
+  image?: string;
 }
 
 export interface FolderMetadata {
@@ -33,8 +34,10 @@ export interface FolderMetadata {
   difficulty?: "easy" | "medium" | "hard" | "insane";
   platform?: string;
   readingTime?: number;
+  image?: string;
   items: WriteupMetadata[];
 }
+
 
 export type ContentItem = WriteupMetadata | FolderMetadata;
 

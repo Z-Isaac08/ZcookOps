@@ -1,9 +1,9 @@
+import { getAllWriteups } from '@/lib/content';
 import { Locale, getDictionary } from '@/lib/i18n';
-import Link from 'next/link';
 import Image from 'next/image';
+import Link from 'next/link';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { SearchDialog } from './SearchDialog';
-import { getAllWriteups } from '@/lib/content';
 
 export async function Header({ lang }: { lang: Locale }) {
   const dict = await getDictionary(lang);
@@ -33,9 +33,10 @@ export async function Header({ lang }: { lang: Locale }) {
           <Link href={`/${lang}/pentest-labs`} className="transition-colors hover:text-primary">
             {dict.nav.pentest}
           </Link>
-          <Link href={`/${lang}/walkthroughs`} className="transition-colors hover:text-primary">
-            {dict.nav.walkthroughs}
+          <Link href={`/${lang}/playbooks`} className="transition-colors hover:text-primary">
+            {dict.nav.playbooks}
           </Link>
+
         </nav>
 
         <div className="flex items-center space-x-4">

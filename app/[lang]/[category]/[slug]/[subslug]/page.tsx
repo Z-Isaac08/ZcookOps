@@ -59,11 +59,13 @@ export default async function FolderChapterPage({
                 <Badge variant="secondary" className="uppercase font-bold tracking-wider bg-muted text-foreground border border-border/50">
                   {lang === 'fr' ? `Chapitre ${chapterNumber} / ${totalChapters}` : `Chapter ${chapterNumber} / ${totalChapters}`}
                 </Badge>
-                {metadata.difficulty && (
+                {category !== 'playbooks' && metadata.difficulty && (
                   <Badge variant="outline" className="uppercase font-bold tracking-wider">
                     {metadata.difficulty}
                   </Badge>
                 )}
+
+
                 {metadata.platform && (
                   <Badge
                     variant="outline"

@@ -1,18 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { Search, FileText, ArrowRight } from "lucide-react";
-import { WriteupMetadata } from "@/lib/content";
+import { ContentItem } from "@/lib/content";
+import { ArrowRight, FileText, Folder, Search } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface SearchDialogProps {
-  writeups: WriteupMetadata[];
+  writeups: ContentItem[];
   lang: string;
   dict: {
     placeholder: string;
@@ -24,8 +24,9 @@ interface SearchDialogProps {
 const categoryLabels: Record<string, string> = {
   ctf: "CTF & Challenges",
   "pentest-labs": "Pentest Labs",
-  walkthroughs: "Walkthroughs",
+  playbooks: "Playbooks",
 };
+
 
 export function SearchDialog({ writeups, lang, dict }: SearchDialogProps) {
   const [open, setOpen] = useState(false);
@@ -70,7 +71,7 @@ export function SearchDialog({ writeups, lang, dict }: SearchDialogProps) {
 
   // Group filtered results by category
   const grouped = useMemo(() => {
-    const groups: Record<string, WriteupMetadata[]> = {};
+    const groups: Record<string, ContentItem[]> = {};
     for (const w of filtered) {
       if (!groups[w.category]) groups[w.category] = [];
       groups[w.category].push(w);
@@ -84,7 +85,7 @@ export function SearchDialog({ writeups, lang, dict }: SearchDialogProps) {
   }, [grouped]);
 
   const navigateTo = useCallback(
-    (writeup: WriteupMetadata) => {
+    (writeup: ContentItem) => {
       setOpen(false);
       router.push(`/${lang}/${writeup.category}/${writeup.slug}`);
     },
@@ -202,13 +203,22 @@ export function SearchDialog({ writeups, lang, dict }: SearchDialogProps) {
                             : "text-foreground/80 hover:bg-accent/50"
                         }`}
                       >
-                        <FileText className="w-4 h-4 shrink-0 text-muted-foreground" />
+                        {writeup.isFolder ? (
+                          <Folder className="w-4 h-4 shrink-0 text-primary" />
+                        ) : (
+                          <FileText className="w-4 h-4 shrink-0 text-muted-foreground" />
+                        )}
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">
-                            {writeup.title}
+                          <p className="text-sm font-medium truncate flex items-center gap-1.5">
+                            <span>{writeup.title}</span>
+                            {writeup.isFolder && (
+                              <span className="text-[10px] text-primary font-semibold uppercase">
+                                [Dossier]
+                              </span>
+                            )}
                           </p>
                           <div className="flex items-center gap-1.5 mt-0.5">
-                            {writeup.difficulty && (
+                            {writeup.category !== 'playbooks' && writeup.difficulty && (
                               <Badge
                                 variant="outline"
                                 className="text-[10px] px-1.5 py-0"
@@ -216,6 +226,7 @@ export function SearchDialog({ writeups, lang, dict }: SearchDialogProps) {
                                 {writeup.difficulty}
                               </Badge>
                             )}
+
                             {writeup.tags.slice(0, 3).map((tag) => (
                               <span
                                 key={tag}
@@ -236,6 +247,7 @@ export function SearchDialog({ writeups, lang, dict }: SearchDialogProps) {
               ))
             )}
           </div>
+
 
           {/* Footer hints */}
           {flatResults.length > 0 && (

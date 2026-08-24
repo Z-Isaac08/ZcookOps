@@ -1,12 +1,12 @@
-import React from 'react';
 import { FolderCard } from '@/components/FolderCard';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { WriteupCard } from '@/components/WriteupCard';
 import { getAllWriteups, getWriteupsByCategory } from '@/lib/content';
 import { Locale, getDictionary } from '@/lib/i18n';
 import { ArrowRight, BookOpen, ChevronRight, Cpu, Layers, Shield, Sparkles, Terminal } from 'lucide-react';
 import Link from 'next/link';
+import React from 'react';
 
 export default async function HomePage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = (await params) as { lang: Locale };
@@ -29,10 +29,10 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       ...dict.home.categories.pentest,
     },
     {
-      id: 'walkthroughs',
+      id: 'playbooks',
       icon: <BookOpen className="w-8 h-8 text-primary" />,
-      count: getWriteupsByCategory('walkthroughs', lang).length,
-      ...dict.home.categories.walkthroughs,
+      count: getWriteupsByCategory('playbooks', lang).length,
+      ...dict.home.categories.playbooks,
     },
   ];
 
@@ -98,13 +98,14 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             <ArrowRight className="w-4 h-4 ml-1" />
           </Link>
           <Link
-            href={`/${lang}/walkthroughs`}
+            href={`/${lang}/playbooks`}
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-card border border-border/80 hover:border-primary/40 text-foreground font-semibold hover:bg-muted/50 transition-all"
           >
             <BookOpen className="w-4 h-4 text-primary" />
-            <span>{lang === 'fr' ? 'Consulter les Guides' : 'View Walkthroughs'}</span>
+            <span>{lang === 'fr' ? 'Consulter les Playbooks' : 'View Playbooks'}</span>
           </Link>
         </div>
+
       </section>
 
       {/* Categories Grid */}

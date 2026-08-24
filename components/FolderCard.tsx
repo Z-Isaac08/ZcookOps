@@ -13,6 +13,8 @@ export function FolderCard({ folder, lang }: { folder: FolderMetadata; lang: str
         {/* Accent indicator line on top of folder card */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-linear-to-r from-primary/80 via-primary to-primary/40" />
 
+
+
         <CardHeader className="pt-6">
           <div className="flex justify-between items-start mb-3 gap-2">
             <div className="flex flex-wrap gap-1.5 items-center">
@@ -30,11 +32,13 @@ export function FolderCard({ folder, lang }: { folder: FolderMetadata; lang: str
                 <Layers className="w-2.5 h-2.5" />
                 {chapterCount} {lang === 'fr' ? (chapterCount > 1 ? 'chapitres' : 'chapitre') : (chapterCount > 1 ? 'chapters' : 'chapter')}
               </Badge>
-              {folder.difficulty && (
+              {folder.category !== 'playbooks' && folder.difficulty && (
                 <Badge variant="outline" className="text-[10px] uppercase font-bold py-0.5 px-1.5 leading-none">
                   {folder.difficulty}
                 </Badge>
               )}
+
+
               {folder.platform && (
                 <Badge variant="secondary" className="text-[10px] uppercase font-bold py-0.5 px-1.5 leading-none bg-primary/10 text-primary border-none">
                   {folder.platform}

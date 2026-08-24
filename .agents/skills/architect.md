@@ -72,7 +72,7 @@ content/
   ctf/                  # CTF writeups (.mdx)
   pentest-labs/         # Pentest lab writeups (.mdx)
   network-labs/         # Network lab writeups (.mdx)
-  walkthroughs/         # General walkthroughs (.mdx)
+  playbooks/         # General playbooks (.mdx)
 dictionaries/
   en.json               # English translations
   fr.json               # French translations
