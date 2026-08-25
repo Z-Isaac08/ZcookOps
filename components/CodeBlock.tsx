@@ -9,15 +9,7 @@ interface CodeBlockProps {
 }
 
 // Langages de shell / commande
-const COMMAND_LANGUAGES = new Set([
-  'bash',
-  'sh',
-  'shell',
-  'zsh',
-  'powershell',
-  'pwsh',
-  'cmd',
-]);
+const COMMAND_LANGUAGES = new Set(['bash', 'sh', 'shell', 'zsh', 'powershell', 'pwsh', 'cmd']);
 
 // Langages de programmation et de configuration (Code Source)
 const CODE_LANGUAGES = new Set([
@@ -136,16 +128,18 @@ export function CodeBlock({ children, className }: CodeBlockProps) {
   }, []);
 
   const rawLanguage = findLanguage(children);
-  const language = rawLanguage ? (DISPLAY_NAMES[rawLanguage] || rawLanguage) : null;
+  const language = rawLanguage ? DISPLAY_NAMES[rawLanguage] || rawLanguage : null;
 
   const isCommand = rawLanguage !== null && COMMAND_LANGUAGES.has(rawLanguage);
   const isCode = rawLanguage !== null && CODE_LANGUAGES.has(rawLanguage);
 
-  const blockType = isCommand ? 'Commande' : isCode ? 'Code' : 'Sortie';
+  const hydratedIsCommand = mounted && isCommand;
+  const hydratedIsCode = mounted && isCode;
+  const blockType = hydratedIsCommand ? 'Commande' : hydratedIsCode ? 'Code' : 'Sortie';
 
   const code = extractText(children);
   const lines = code.split(/\r?\n/);
-  const shouldCollapse = lines.length > 14;
+  const shouldCollapse = mounted && lines.length > 14;
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(code);
@@ -159,9 +153,9 @@ export function CodeBlock({ children, className }: CodeBlockProps) {
       <div
         className={[
           'flex items-center justify-between border-b px-3 py-1.5 text-[11px] font-medium uppercase tracking-wider',
-          isCommand
+          hydratedIsCommand
             ? 'bg-emerald-950/40 border-emerald-900/40 text-emerald-400'
-            : isCode
+            : hydratedIsCode
               ? 'bg-sky-950/40 border-sky-900/40 text-sky-400'
               : 'bg-slate-900/60 border-slate-800 text-slate-500',
         ].join(' ')}
@@ -169,9 +163,7 @@ export function CodeBlock({ children, className }: CodeBlockProps) {
         <span>{blockType}</span>
         <div className="flex items-center gap-3">
           {mounted && language && (
-            <span className="opacity-75 font-mono text-[10px]">
-              {language}
-            </span>
+            <span className="opacity-75 font-mono text-[10px]">{language}</span>
           )}
           <button
             onClick={handleCopy}

@@ -1,5 +1,33 @@
 [
   {
+    "isFolder": false,
+    "slug": "lab-sharethepain",
+    "title": "Lab ShareThePain : Coercition NTLM via SCF, Contrôle Total LDAP et Pivot MSSQL vers SYSTEM",
+    "date": "24-08-2026",
+    "tags": [
+      "Active Directory",
+      "NTLM Coercion",
+      "SCF File",
+      "Responder",
+      "bloodyAD",
+      "GenericAll",
+      "MSSQL",
+      "Chisel",
+      "Port Forwarding",
+      "SeImpersonatePrivilege",
+      "DeadPotato",
+      "HackSmarter",
+      "Windows",
+      "Pentest"
+    ],
+    "category": "pentest-labs",
+    "lang": "fr",
+    "description": "Pentest Active Directory démarrant d'un partage SMB accessible en écriture par la session anonyme : coercition NTLM via dépôt d'un fichier SCF piégé, découverte d'un contrôle total sur un compte via l'énumération directe des attributs inscriptibles (sans BloodHound), pivot vers une instance MSSQL locale accessible uniquement en loopback via un tunnel Chisel, puis élévation finale à SYSTEM en abusant de SeImpersonatePrivilege sur le compte de service SQL.",
+    "difficulty": "medium",
+    "platform": "HackSmarter",
+    "readingTime": 12
+  },
+  {
     "isFolder": true,
     "slug": "os-dev-from-scratch",
     "title": "Création d'un Système d'Exploitation x86 (OS Development)",

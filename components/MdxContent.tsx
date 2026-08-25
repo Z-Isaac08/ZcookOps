@@ -3,7 +3,6 @@ import { CodeBlock } from '@/components/CodeBlock';
 import { ZoomableImage } from '@/components/ZoomableImage';
 import {
   AlertCircle,
-  ExternalLink,
   Info,
   Lightbulb,
   ShieldAlert,
@@ -126,7 +125,6 @@ function CustomLink({ href, children, ...props }: any) {
         {...props}
       >
         <span>{children}</span>
-        <ExternalLink className="w-3.5 h-3.5 text-primary/70 group-hover:text-primary transition-colors inline shrink-0" />
       </a>
     );
   }

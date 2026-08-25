@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import { X, ZoomIn } from 'lucide-react';
+import { useState } from 'react';
 
 export function ZoomableImage({ src, alt, ...props }: any) {
   const [isOpen, setIsOpen] = useState(false);
@@ -10,7 +10,7 @@ export function ZoomableImage({ src, alt, ...props }: any) {
 
   return (
     <>
-      <span className="relative group inline-block my-8 cursor-zoom-in max-w-full overflow-hidden rounded-xl border border-border/50 bg-card/20 shadow-md hover:shadow-xl transition-all duration-300">
+      <span className="relative group inline-block my-4 cursor-zoom-in max-w-full rounded-xl transition-transform duration-300">
         <img
           src={src}
           alt={alt || 'Screenshot'}
@@ -42,7 +42,7 @@ export function ZoomableImage({ src, alt, ...props }: any) {
           <img
             src={src}
             alt={alt || 'Screenshot'}
-            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            className="max-w-full max-h-[90vh] object-contain rounded-lg"
           />
         </span>
       )}
