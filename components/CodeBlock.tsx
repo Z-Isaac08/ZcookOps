@@ -2,6 +2,7 @@
 
 import { Check, Copy } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { codeToHtml } from 'shiki';
 
 interface CodeBlockProps {
   children?: React.ReactNode;
@@ -122,10 +123,70 @@ export function CodeBlock({ children, className }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [highlightedHtml, setHighlightedHtml] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+
+    // Colorer le code avec Shiki
+    const highlightCode = async () => {
+      try {
+        const rawLanguage = findLanguage(children);
+        const code = extractText(children);
+
+        // Map language codes to Shiki language names
+        const languageMap: Record<string, string> = {
+          bash: 'bash',
+          sh: 'bash',
+          shell: 'bash',
+          zsh: 'bash',
+          powershell: 'powershell',
+          pwsh: 'powershell',
+          cmd: 'powershell',
+          python: 'python',
+          py: 'python',
+          javascript: 'javascript',
+          js: 'javascript',
+          typescript: 'typescript',
+          ts: 'typescript',
+          c: 'c',
+          cpp: 'cpp',
+          'c++': 'cpp',
+          csharp: 'csharp',
+          'c#': 'csharp',
+          java: 'java',
+          php: 'php',
+          ruby: 'ruby',
+          rust: 'rust',
+          rs: 'rust',
+          go: 'go',
+          golang: 'go',
+          html: 'html',
+          css: 'css',
+          xml: 'xml',
+          json: 'json',
+          yaml: 'yaml',
+          yml: 'yaml',
+          sql: 'sql',
+        };
+
+        const shikiLang = rawLanguage ? languageMap[rawLanguage] : undefined;
+
+        if (shikiLang && code.trim()) {
+          const html = await codeToHtml(code, {
+            lang: shikiLang,
+            theme: 'one-dark-pro',
+          });
+          setHighlightedHtml(html);
+        }
+      } catch (error) {
+        console.error('Failed to highlight code with Shiki:', error);
+        // Fallback to non-highlighted version
+      }
+    };
+
+    highlightCode();
+  }, [children]);
 
   const rawLanguage = findLanguage(children);
   const language = rawLanguage ? DISPLAY_NAMES[rawLanguage] || rawLanguage : null;
@@ -180,17 +241,27 @@ export function CodeBlock({ children, className }: CodeBlockProps) {
         </div>
       </div>
 
-      <pre
-        className={[
-          'm-0! p-4! border-0! rounded-none! bg-transparent! w-full overflow-x-auto text-sm leading-6',
-          shouldCollapse && !expanded ? 'max-h-72 overflow-y-hidden' : 'max-h-none',
-          className,
-        ]
-          .filter(Boolean)
-          .join(' ')}
-      >
-        {children}
-      </pre>
+      {highlightedHtml ? (
+        <div
+          className={[
+            'w-full overflow-x-auto text-sm leading-6',
+            shouldCollapse && !expanded ? 'max-h-72 overflow-y-hidden' : 'max-h-none',
+          ].join(' ')}
+          dangerouslySetInnerHTML={{ __html: highlightedHtml }}
+        />
+      ) : (
+        <pre
+          className={[
+            'm-0 p-4 border-0 rounded-none bg-transparent w-full overflow-x-auto text-sm leading-6',
+            shouldCollapse && !expanded ? 'max-h-72 overflow-y-hidden' : 'max-h-none',
+            className,
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        >
+          {children}
+        </pre>
+      )}
 
       {shouldCollapse && !expanded && (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-linear-to-t from-slate-950 via-slate-950/80 to-transparent" />

@@ -160,3 +160,25 @@
     @apply border border-border/50 bg-[#0d1117]! rounded-lg p-4 my-6 shadow-lg;
   }
 }
+
+/* Shiki syntax highlighting styles */
+.shiki {
+  overflow-x: auto;
+  border-radius: 0.5rem;
+  margin: 1.5rem 0;
+  background-color: #2e3440 !important;
+  color: #eceff4 !important;
+}
+
+.shiki pre {
+  padding: 1rem;
+  margin: 0;
+  background: transparent !important;
+}
+
+.shiki code {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+  background: transparent !important;
+}

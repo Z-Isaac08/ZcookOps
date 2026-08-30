@@ -1,6 +1,61 @@
 [
   {
     "isFolder": false,
+    "slug": "lab-ctos",
+    "title": "Lab Ctos : Désérialisation Pickle, Pivot Linux vers Windows et Abus de GPO jusqu'au krbtgt",
+    "date": "30-08-2026",
+    "tags": [
+      "Active Directory",
+      "Insecure Deserialization",
+      "Pickle RCE",
+      "Linux Privilege Escalation",
+      "Keytab",
+      "BloodHound",
+      "GenericWrite",
+      "Shadow Credentials",
+      "GPO Abuse",
+      "pyGPOAbuse",
+      "KeePass",
+      "HackSmarter",
+      "Windows",
+      "Linux",
+      "Pentest"
+    ],
+    "category": "pentest-labs",
+    "lang": "fr",
+    "description": "Pentest complet sur 3 cibles (un contrôleur de domaine, une station de travail et un serveur web Linux) : désérialisation Pickle non sécurisée pour un contournement d'authentification puis une RCE, escalade Linux en chaîne via un script de sauvegarde vulnérable au symlink et l'appartenance au groupe disk, extraction de credentials Kerberos via un fichier keytab, password spraying à partir d'une politique de mot de passe reconstituée, élévation Windows via une ACL de service faible, cassage d'une base KeePass, puis compromission totale du domaine via une chaîne d'ACL (GenericWrite, AddMember, WriteOwner) menant à un abus de GPO sur l'OU des contrôleurs de domaine.",
+    "difficulty": "hard",
+    "platform": "HackSmarter",
+    "readingTime": 23
+  },
+  {
+    "isFolder": false,
+    "slug": "lab-past",
+    "title": "Lab Past : Timeroasting, Contournement de Protected Users et RBCD sur le Contrôleur de Domaine",
+    "date": "27-08-2026",
+    "tags": [
+      "Active Directory",
+      "Timeroasting",
+      "RID Brute Force",
+      "Protected Users",
+      "BloodHound",
+      "GenericAll",
+      "RBCD",
+      "Kerberos",
+      "PowerShell History",
+      "HackSmarter",
+      "Windows",
+      "Pentest"
+    ],
+    "category": "pentest-labs",
+    "lang": "fr",
+    "description": "Pentest Active Directory sur un domaine en cours d'extension : RID Brute Force en session invité, Timeroasting pour récupérer le hash d'un compte machine sans authentification, découverte de credentials en clair dans un script SYSVOL, contournement de la protection Protected Users via Kerberos, et élévation finale au Domain Admin en exploitant un GenericAll sur le contrôleur de domaine lui-même via une chaîne RBCD complète.",
+    "difficulty": "medium",
+    "platform": "HackSmarter",
+    "readingTime": 17
+  },
+  {
+    "isFolder": false,
     "slug": "lab-sharethepain",
     "title": "Lab ShareThePain : Coercition NTLM via SCF, Contrôle Total LDAP et Pivot MSSQL vers SYSTEM",
     "date": "24-08-2026",
@@ -25,7 +80,7 @@
     "description": "Pentest Active Directory démarrant d'un partage SMB accessible en écriture par la session anonyme : coercition NTLM via dépôt d'un fichier SCF piégé, découverte d'un contrôle total sur un compte via l'énumération directe des attributs inscriptibles (sans BloodHound), pivot vers une instance MSSQL locale accessible uniquement en loopback via un tunnel Chisel, puis élévation finale à SYSTEM en abusant de SeImpersonatePrivilege sur le compte de service SQL.",
     "difficulty": "medium",
     "platform": "HackSmarter",
-    "readingTime": 12
+    "readingTime": 13
   },
   {
     "isFolder": true,
@@ -141,7 +196,7 @@
     "category": "pentest-labs",
     "lang": "fr",
     "description": "Pentest Active Directory complet démarrant d'un simple portail web développeur : injection SQL pour contourner l'authentification, coercition NTLM répétée (upload de fichier puis xp_dirtree MSSQL) pour capturer deux comptes, double chaîne d'abus d'ACL (ForceChangePassword, WriteOwner, GenericAll) cartographiée avec BloodHound, contournement d'une restriction logonHours, restauration d'un compte depuis la corbeille Active Directory, puis élévation finale à l'Administrateur du domaine via un enchaînement ESC3 (Enrollment Agent) et ESC7 (droits CA mal répartis).",
-    "difficulty": "hard",
+    "difficulty": "medium",
     "platform": "HackSmarter",
     "readingTime": 25
   },
@@ -244,7 +299,7 @@
     "category": "pentest-labs",
     "lang": "fr",
     "description": "Pentest black-box d'un domaine Active Directory d'une entreprise énergétique : durcissement SMB contourné via énumération d'utilisateurs Kerberos avec Kerbrute, AS-REP Roasting nécessitant une wordlist personnalisée et des règles hashcat, abus d'une chaîne d'ACL (WriteOwner/GenericAll/ForceChangePassword) cartographiée avec BloodHound et exploitée via bloodyAD, puis élévation locale à SYSTEM via SeImpersonatePrivilege et DeadPotato pour une compromission complète.",
-    "difficulty": "medium",
+    "difficulty": "easy",
     "platform": "CreedCTF",
     "readingTime": 14
   },

@@ -79,12 +79,14 @@ C'est le tout premier échange, celui qui obtient le TGT. Le client envoie un `K
 > [!TIP]
 > C'est précisément cette étape de pré-authentification que contourne l'**ASREPRoast** : un compte avec l'option `UF_DONT_REQUIRE_PREAUTH` activée accepte de délivrer un `AS-REP` sans exiger ce timestamp chiffré au préalable, ce qui permet à n'importe qui de demander ce ticket et de tenter de le casser hors ligne. Voir la Famille II de ce document.
 
-Le **timestamp** dans `PA-ENC-TIMESTAMP` sert aussi de protection contre le **rejeu** (replay) : le KDC rejette toute requête dont le timestamp s'écarte de plus de 5 minutes (`MaxClockSkew` par défaut) de son horloge, et mémorise les timestamps récemment vus pour rejeter un identique déjà traité. C'est la raison exacte pour laquelle une désynchronisation d'horloge entre l'attaquant et le DC casse systématiquement les échanges Kerberos.
+Le **timestamp** dans `PA-ENC-TIMESTAMP` contribue aussi à limiter le **rejeu** (replay) : le KDC vérifie que la requête reste dans la tolérance de dérive horaire (`MaxClockSkew`, 5 minutes par défaut). Les authenticators présentés aux services sont également protégés par un replay cache. Une dérive importante entre le client et le DC peut donc faire échouer les échanges Kerberos, sans que toute différence d'horloge les casse systématiquement.
 
 Si tout est valide, le KDC répond avec un `KRB_AS_REP` contenant deux éléments distincts, chiffrés différemment :
 
 - Une **clé de session** et des métadonnées, chiffrées avec la clé de long terme du client (c'est cette portion que l'ASREPRoast tente de casser)
 - Le **TGT** lui-même, chiffré avec la clé du `krbtgt`, donc totalement illisible pour le client qui le reçoit, il ne fait que le stocker et le representer plus tard
+
+![AS-REQ / AS-REP](/images/play_kerberos/PreAuth.png)
 
 ### 4. TGS-REQ / TGS-REP
 
@@ -95,13 +97,15 @@ Une fois le TGT en main, le client l'utilise pour demander des tickets de servic
 
 ### 5. AP-REQ / AP-REP
 
-Dernier échange, celui qui présente réellement le ticket au service cible. Le client envoie un `KRB_AP_REQ` au service, contenant le TGS et un nouvel authenticator chiffré avec la clé de session du TGS. Le service, qui connaît sa propre clé de long terme, déchiffre le TGS lui-même (sans jamais recontacter le KDC dans le cas standard), vérifie l'authenticator, et lit le PAC contenu dans le TGS pour connaître les groupes et privilèges du client. Optionnellement, si le client l'a demandé, le service répond avec un `KRB_AP_REP` prouvant à son tour son identité au client (authentification mutuelle).
+Dernier échange, celui qui présente réellement le ticket au service cible. Le client envoie un `KRB_AP_REQ` au service, contenant le TGS et un nouvel authentificateur chiffré avec la clé de session du TGS. Le service, qui connaît sa propre clé de long terme, déchiffre le TGS lui-même (sans jamais recontacter le KDC dans le cas standard), vérifie l'authenticator, et lit le PAC contenu dans le TGS pour connaître les groupes et privilèges du client. Optionnellement, si le client l'a demandé, le service répond avec un `KRB_AP_REP` prouvant à son tour son identité au client (authentification mutuelle).
 
-C'est cet échange qui est directement rejoué lors d'un **Pass-the-Ticket** : l'attaquant présente un TGS ou TGT volé, sans jamais avoir eu besoin du mot de passe du compte visé.
+C'est cet échange qui est directement réutilisé lors d'un **Pass-the-Ticket** : l'attaquant injecte un ticket obtenu depuis une mémoire LSASS, un cache ou une session compromise, avec le contexte de clé de session nécessaire à son utilisation, sans connaître le mot de passe du compte visé.
+
+![kerberos-flow](/images/play_kerberos/ComAuth.png)
 
 ### 6. Clés et Dérivation de Clés
 
-Quatre clés distinctes interviennent dans un cycle Kerberos complet, et les confondre est la source d'erreurs de compréhension les plus fréquentes :
+Plusieurs clés interviennent dans un cycle Kerberos complet, et les confondre est la source d'erreurs de compréhension les plus fréquentes :
 
 | Clé                              | Dérivée de                                        | Utilisée pour                                  |
 | -------------------------------- | ------------------------------------------------- | ---------------------------------------------- |
@@ -109,6 +113,7 @@ Quatre clés distinctes interviennent dans un cycle Kerberos complet, et les con
 | **Clé du krbtgt**                | Hash du compte `krbtgt`                           | Chiffrer et signer tous les TGT du domaine     |
 | **Clé de session (TGT)**         | Générée aléatoirement par le KDC lors de l'AS-REP | Chiffrer les échanges TGS-REQ/TGS-REP suivants |
 | **Clé de long terme du service** | Hash du compte de service visé                    | Chiffrer le TGS délivré pour ce service        |
+| **Clé de session (TGS)**         | Générée aléatoirement par le KDC lors du TGS-REP  | Chiffrer l'authenticator de l'AP-REQ           |
 
 La clé de session n'est jamais dérivée d'un mot de passe : elle est générée aléatoirement à chaque AS-REP, ce qui garantit qu'une compromission d'une session Kerberos n'expose jamais directement de matériel réutilisable pour une autre session.
 
@@ -127,7 +132,7 @@ Référence : [The Hacker Recipes : Kerberos](https://www.thehacker.recipes/ad/m
 
 Le **PAC** (Privilege Attribute Certificate) est une structure incluse dans presque tous les tickets Kerberos AD, contenant les informations d'autorisation du client : SID, appartenance aux groupes, `UserAccountControl`, et d'autres métadonnées. C'est le PAC, pas le ticket lui-même, qui permet à un service de savoir ce que le client a le droit de faire, sans jamais interroger l'annuaire à chaque connexion.
 
-Le PAC est **signé** par le KDC avec deux signatures distinctes : une avec la clé `krbtgt` (Key Distribution Center Signature, sur les versions récentes) et une avec la clé du service cible (Server Signature). Un service qui reçoit un ticket peut donc, en théorie, vérifier la signature du PAC en la comparant à celle qu'il recalculerait avec sa propre clé, mais **cette vérification est optionnelle et rarement effectuée** en pratique, la plupart des services faisant confiance au chiffrement du ticket lui-même comme preuve suffisante.
+Le PAC contient notamment une signature KDC et une signature du serveur cible, avec des rôles distincts. Le service peut valider les informations du PAC localement et, selon le protocole et le contexte, déclencher une validation auprès du KDC. Le niveau de validation varie donc selon le service et sa configuration : il ne faut pas présenter le chiffrement du ticket comme une garantie suffisante dans tous les cas.
 
 > [!WARNING]
 > C'est exactement cette absence quasi-systématique de vérification de signature qui rend les Golden et Silver Tickets possibles : un attaquant qui connaît la clé de chiffrement du ticket peut y inclure un PAC entièrement forgé (n'importe quel SID, n'importe quel groupe), et tant que le chiffrement global du ticket est correct, la majorité des services ne détecteront jamais que le PAC interne est mensonger.
@@ -150,7 +155,7 @@ Référence : [The Hacker Recipes : UnPAC the hash](https://www.thehacker.recipe
 
 C'est le mécanisme exploité dans les attaques ADCS (ESC1, ESC3, ESC7, ESC8, etc.) : une fois un certificat valide obtenu au nom d'une identité cible, un outil comme `certipy-ad auth` effectue cette authentification PKINIT pour obtenir un TGT.
 
-**Comment le hash NTLM est récupéré à partir d'un simple certificat :** PKINIT étant conçu à l'origine pour permettre à des utilisateurs Smart Card (qui n'ont pas de mot de passe classique en tête) de continuer à s'authentifier sur des services legacy en NTLM, le KDC inclut, lors d'une authentification PKINIT réussie, une structure `PAC_CREDENTIAL_INFO` contenant le hash NT du compte, chiffrée avec la clé de session du TGT. Récupérer cette structure nécessite une requête **User-to-User (U2U)** : le client demande un TGS pour lui-même en utilisant son propre TGT comme clé de chiffrement plutôt que la clé d'un service tiers, ce qui lui permet de déchiffrer la réponse et d'en extraire le hash NT. C'est cette séquence complète (PKINIT puis U2U vers soi-même) que Certipy appelle en interne lors de `certipy-ad auth`, et qui explique pourquoi un simple certificat suffit à obtenir un hash NTLM exploitable en Pass-the-Hash.
+**Cas particulier de l'UnPAC-the-Hash :** dans certaines configurations et certains échanges PKINIT, le KDC peut inclure une structure `PAC_CREDENTIAL_INFO` contenant le hash NT du compte, chiffrée avec la clé de session du TGT. Récupérer cette structure nécessite généralement une requête **User-to-User (U2U)** et les conditions cryptographiques appropriées. L'obtention d'un TGT par PKINIT et l'extraction d'un hash NT sont donc deux résultats distincts : `certipy-ad auth` peut obtenir le TGT sans que l'UnPAC-the-Hash soit automatiquement disponible dans tous les environnements.
 
 ---
 
@@ -165,6 +170,8 @@ Référence : [HackTricks : ASREPRoast](https://hacktricks.wiki/en/windows-harde
 **Théorie :** exploite directement le mécanisme décrit en section 3. Dans un échange AS-REQ/AS-REP normal, le KDC exige une preuve de pré-authentification (`PA-ENC-TIMESTAMP`) avant de délivrer quoi que ce soit. Mais si un compte a l'option `UF_DONT_REQUIRE_PREAUTH` activée dans son `UserAccountControl`, le KDC renvoie un `AS-REP` complet **sans exiger cette preuve**. La portion de cet AS-REP chiffrée avec la clé de long terme du client (la clé dérivée de son mot de passe) peut alors être récupérée par n'importe qui et soumise à un cassage offline.
 
 Concrètement, l'attaquant n'a besoin d'aucun credential pour lancer l'attaque : il suffit de connaître (ou d'énumérer) les noms de comptes du domaine. Pour chaque compte testé, il envoie un AS-REQ sans données de pré-authentification ; si le compte est vulnérable, le KDC répond normalement, sinon il renvoie une erreur `KDC_ERR_PREAUTH_REQUIRED`. Le hash récupéré est un blob chiffré en RC4 ou AES selon la configuration du compte.
+
+![ASREPRoast](/images/play_kerberos/ASREProast.png)
 
 **Découverte :**
 
@@ -188,6 +195,8 @@ Référence : [HackTricks : Kerberoast](https://hacktricks.wiki/en/windows-harde
 **Théorie :** exploite le mécanisme décrit en section 4. Par design, n'importe quel utilisateur authentifié du domaine peut demander un TGS pour n'importe quel SPN existant, et le KDC délivrera ce TGS sans vérifier si l'utilisateur a réellement besoin d'accéder à ce service. Le TGS résultant est chiffré avec la clé de long terme du **compte de service** portant ce SPN (dérivée de son mot de passe). L'attaquant récupère ce TGS et tente de le casser offline pour retrouver le mot de passe du compte de service.
 
 L'attaque est particulièrement efficace contre les comptes de service **utilisateurs** (par opposition aux comptes machines, dont les mots de passe sont longs, aléatoires et changés automatiquement tous les 30 jours). Un compte de service avec un mot de passe faible ou ancien est la cible idéale.
+
+![Kerberoast](/images/play_kerberos/Kerberoast.png)
 
 **Découverte et exploitation :**
 
@@ -229,10 +238,6 @@ hashcat -m 13100 -a 0 targeted_hash.txt /usr/share/wordlists/rockyou.txt
 
 **Détection :** les mêmes indicateurs que le Kerberoasting classique (Event 4769), combinés avec un Event **5136** (modification d'attribut d'annuaire) montrant un changement de `servicePrincipalName` sur un compte qui n'en avait pas auparavant. La séquence temporelle ajout de SPN → requête 4769 → suppression du SPN en quelques secondes est un signal très fiable.
 
-### Transition : Matériel de Mot de Passe Windows/AD
-
-Avant d'aborder le vol et la réutilisation de credentials en section IV, un point de vocabulaire à fixer : quand on parle de "hash" dans le contexte AD, il peut s'agir de deux choses différentes. Le **hash NT** (souvent appelé "NTLM hash", techniquement le hash MD4 du mot de passe UTF-16) est ce que récupèrent ASREPRoast, Kerberoasting, DCSync, ou un dump SAM/NTDS. Les **clés AES** (AES128/AES256) sont dérivées différemment, via PBKDF2 avec un salt spécifique à Kerberos (généralement dérivé de l'UPN et du realm), et ne sont pas interchangeables avec le hash NT. C'est cette distinction qui explique pourquoi Overpass-the-Hash accepte indifféremment un hash NT (`/rc4:`) ou une clé AES (`/aes256:`) en section IV : les deux sont du matériel de clé de long terme valide pour Kerberos, juste dérivés différemment.
-
 ---
 
 ## III. Forge de Tickets
@@ -247,12 +252,19 @@ Référence : [ired.team : Kerberos Golden Tickets](https://www.ired.team/offens
 
 **Théorie :** avec le hash du compte `krbtgt`, un attaquant peut construire de toutes pièces un TGT complet, sans jamais interagir avec le KDC pour l'obtenir. Puisque le TGT n'est validé par aucun service autre que le KDC lui-même lors des futures demandes de TGS, et que le KDC se contente de le déchiffrer avec sa propre clé `krbtgt` (qui correspond exactement à celle utilisée pour forger le ticket), le TGT forgé est traité comme parfaitement légitime. L'attaquant peut y inscrire n'importe quelle identité, n'importe quels groupes dans le PAC (typiquement Domain Admins, RID 512), et une durée de vie arbitraire.
 
+![Golden Ticket](/images/play_kerberos/GoldT.png)
+
 **Exploitation :**
 
 ```bash
-mimikatz # kerberos::golden /sid:S-1-5-21-... /domain:domain.local \
-  /ptt /id:500 /krbtgt:<hash NT du krbtgt> /user:administrator
+impacket-ticketer -nthash '<hash NT du krbtgt>' \
+  -domain-sid 'S-1-5-21-...' -domain 'domain.local' \
+  -user-id 500 administrator
+
+export KRB5CCNAME='administrator.ccache'
 ```
+
+`ticketer.py` génère un TGT au format `.ccache`. Il peut ensuite être utilisé par les outils Kerberos qui lisent la variable `KRB5CCNAME`, au lieu d'être injecté directement dans la session comme avec Mimikatz.
 
 **Impact :** contrôle total et persistant du domaine, jusqu'au changement du mot de passe `krbtgt` (deux fois, pour invalider aussi la version N-1 conservée par Windows pour la continuité de service).
 
@@ -262,7 +274,9 @@ mimikatz # kerberos::golden /sid:S-1-5-21-... /domain:domain.local \
 
 Référence : [ired.team : Kerberos Silver Tickets](https://www.ired.team/offensive-security-experiments/active-directory-kerberos-abuse/kerberos-silver-tickets) / [Semperis : How to Defend Against Silver Ticket Attacks](https://www.semperis.com/blog/how-to-defend-against-silver-ticket-attacks/)
 
-**Théorie :** différence fondamentale avec le Golden Ticket, ici c'est directement le **TGS** qui est forgé, avec le hash du compte de service visé, sans jamais passer par le KDC du tout (ni pour le TGT, ni pour le TGS). Le service cible, en recevant l'AP-REQ, déchiffre le ticket avec sa propre clé, qui correspond bien à celle utilisée pour la forge : l'accès est accordé. C'est plus restreint qu'un Golden Ticket (un seul service est accessible, celui dont le hash a été compromis), mais souvent plus discret puisqu'aucune trace n'existe au niveau du KDC.
+**Théorie :** différence fondamentale avec le Golden Ticket, ici c'est directement le **TGS** qui est forgé, avec la clé du compte portant le ou les SPN visés, sans jamais passer par le KDC pour obtenir ce ticket. Le service cible, en recevant l'AP-REQ, déchiffre le ticket avec sa propre clé, qui correspond bien à celle utilisée pour la forge. La portée dépend donc des SPN associés à la clé compromise et reste généralement plus limitée qu'un Golden Ticket, tandis qu'aucune demande KDC n'est nécessaire pour le TGS forgé.
+
+![Silver Ticket](/images/play_kerberos/SilverT.png)
 
 **Exploitation :**
 
@@ -279,9 +293,11 @@ mimikatz # kerberos::golden /sid:S-1-5-21-... /domain:domain.local \
 
 Référence : [The Hacker Recipes : Diamond tickets](https://www.thehacker.recipes/ad/movement/kerberos/forged-tickets/diamond) / [The Hacker Recipes : Sapphire tickets](https://www.thehacker.recipes/ad/movement/kerberos/forged-tickets/sapphire)
 
-**Théorie :** Golden et Silver Tickets partagent une faiblesse structurelle commune : ils sont **entièrement forgés**, ce qui signifie qu'aucune requête légitime n'a jamais transité par le KDC pour les obtenir. Une simple corrélation entre les événements 4768/4769 suffit donc, en théorie, à les repérer. Diamond et Sapphire répondent à ce problème en changeant complètement d'approche : au lieu de forger un ticket de toutes pièces, l'attaquant **demande un vrai ticket au KDC** via un échange normal, puis en modifie uniquement le PAC après réception.
+**Théorie :** Golden et Silver Tickets sont forgés avec des clés légitimes compromises, mais leur visibilité diffère. Un Silver Ticket peut être utilisé directement sans demande KDC, alors qu'un Golden Ticket peut servir à demander ensuite des TGS légitimes. Une simple corrélation entre les événements 4768/4769 ne suffit donc pas à détecter tous les cas. Diamond et Sapphire utilisent, eux, un ticket obtenu par un échange réel avec le KDC, puis manipulent certaines données d'autorisation pour réduire les anomalies de forme.
 
 **Diamond Ticket :** avec le hash `krbtgt`, l'attaquant s'authentifie normalement pour obtenir un vrai TGT, le déchiffre (puisqu'il connaît la clé), modifie le PAC interne (groupes, SID), puis re-chiffre et re-signe le ticket avec la même clé `krbtgt`. Le ticket résulte d'une vraie requête AS-REQ/AS-REP, donc les 4768/4769 sont cohérents, seul le contenu du PAC est mensonger.
+
+![Diamond Ticket](/images/play_kerberos/DiamondT.png)
 
 **Sapphire Ticket :** va encore plus loin dans le réalisme. Plutôt que de modifier manuellement le PAC d'un ticket obtenu pour soi-même, l'attaquant utilise le mécanisme **S4U2Self + U2U** (U2U étant le même principe de chiffrement que celui de l'UnPAC-the-Hash en section 11, mais combiné ici avec S4U2Self pour cibler un autre compte) pour récupérer le PAC d'un compte réellement privilégié, puis l'insère tel quel dans son propre ticket. Le résultat est un assemblage d'éléments entièrement légitimes (un vrai PAC d'un vrai compte admin, sur un vrai ticket obtenu normalement), ce qui en fait la variante la plus difficile à détecter des quatre.
 
@@ -309,6 +325,8 @@ Le **Pass-the-Hash** n'est techniquement pas une attaque Kerberos : c'est une at
 ### 18. Pass-the-Ticket
 
 **Théorie :** la forme la plus directe de réutilisation, sans transformation intermédiaire. Un TGT ou un TGS volé (extrait de la mémoire LSASS d'une machine compromise, ou intercepté) est simplement réinjecté dans la session Kerberos courante de l'attaquant, exactement comme s'il avait été obtenu légitimement par ce dernier lors de son propre AS-REQ/TGS-REQ.
+
+![Pass-the-Ticket](/images/play_kerberos/PassTheT.png)
 
 **Exploitation :**
 
@@ -375,7 +393,7 @@ Référence : [The Hacker Recipes : Constrained Delegation](https://www.thehacke
 - **S4U2Self** ("Service for User to Self") : permet à un service d'obtenir, en son propre nom, un TGS _pour lui-même_ au nom d'un utilisateur arbitraire, sans que cet utilisateur ait besoin de s'authentifier directement. C'est ce qui permet au service de dire au KDC "je voudrais un ticket qui prouve que je peux agir en tant que cet utilisateur, envers moi-même".
 - **S4U2Proxy** ("Service for User to Proxy") : prend ce ticket obtenu via S4U2Self (à condition qu'il soit `forwardable`) et l'échange contre un nouveau TGS valide, cette fois vers le service _tiers_ listé dans `msDS-AllowedToDelegateTo`, toujours au nom de l'utilisateur d'origine.
 
-Le KDC vérifie, lors de la requête S4U2Proxy, que le SPN demandé figure bien dans `msDS-AllowedToDelegateTo` du compte délégant : c'est ce contrôle qui manque totalement dans la délégation non contrainte.
+Le KDC vérifie, lors de la requête S4U2Proxy, que le SPN demandé figure bien dans `msDS-AllowedToDelegateTo` du compte délégant : c'est ce contrôle qui manque totalement dans la délégation non contrainte. La possibilité d'obtenir un ticket `forwardable` et d'usurper l'utilisateur dépend aussi de la configuration du compte de service et du fait que l'utilisateur cible soit délégable.
 
 **Exploitation :**
 
@@ -386,7 +404,7 @@ impacket-getST -spn 'cifs/target.domain.local' -impersonate administrator \
 
 **Impact :** obtention d'un TGS valide pour le service spécifié dans `msDS-AllowedToDelegateTo`, au nom de n'importe quel utilisateur du domaine, y compris un Domain Admin, tant que celui-ci n'est pas marqué sensible à la délégation ou membre de Protected Users.
 
-**Détection :** Event **4769** avec le champ `Transited Services` non vide, révélateur d'un chaînage S4U. Un compte utilisateur normal ne devrait jamais générer ce pattern, seuls les comptes de service légitimement configurés pour la délégation le devraient.
+**Détection :** Event **4769** avec le champ `Transited Services` non vide peut indiquer un chaînage S4U, mais ce n'est pas une preuve isolée. Il faut le corréler avec le compte demandeur, le SPN cible, la configuration de délégation et les modifications d'annuaire.
 
 ### 22. RBCD (Resource-Based Constrained Delegation)
 
@@ -410,7 +428,7 @@ impacket-getST -spn 'cifs/target.domain.local' -impersonate administrator \
 
 **Impact :** accès complet à la machine cible avec l'identité usurpée, tant que le compte cible n'est pas protégé contre la délégation (marqué sensible ou membre de Protected Users).
 
-**Détection :** Event **5136** montrant une modification de `msDS-AllowedToActOnBehalfOfOtherIdentity`, suivi d'un Event **4769** avec `Transited Services` non vide. La création d'un nouveau compte machine (Event **4741**) juste avant ce pattern renforce encore le signal.
+**Détection :** Event **5136** montrant une modification de `msDS-AllowedToActOnBehalfOfOtherIdentity` constitue le signal principal. Il peut être corrélé avec un Event **4769** indiquant une demande S4U, mais un ticket forgé ou certains chemins d'exploitation peuvent ne pas produire exactement cette séquence. La création d'un nouveau compte machine (Event **4741**) juste avant renforce le signal.
 
 ---
 
@@ -420,10 +438,10 @@ impacket-getST -spn 'cifs/target.domain.local' -impersonate administrator \
 
 Référence : [HackTricks : Skeleton Key](https://hacktricks.wiki/en/windows-hardening/active-directory-methodology/skeleton-key.html)
 
-Contrairement à toutes les techniques précédentes, ce n'est pas une attaque du protocole Kerberos lui-même : c'est une **altération directe du processus `lsass.exe` sur un contrôleur de domaine**, qui patche en mémoire les routines de vérification NTLM et Kerberos RC4 pour qu'elles acceptent, en plus du vrai mot de passe de chaque compte, un mot de passe maître unique choisi par l'attaquant (`mimikatz` par défaut). C'est la raison de son classement en annexe : elle nécessite déjà un contrôle total (SYSTEM) sur un DC pour être déployée, ce n'est donc pas un vecteur d'élévation mais une technique de **persistance post-compromission**.
+Contrairement aux techniques précédentes, ce n'est pas une attaque du protocole Kerberos lui-même : c'est une **altération en mémoire de composants d'authentification sur un contrôleur de domaine**, qui peut faire accepter, en plus du vrai mot de passe, un mot de passe maître choisi par l'attaquant. Le comportement exact dépend du chemin d'authentification et de la version de Windows. Elle nécessite déjà un contrôle très élevé sur un DC : c'est une technique de **persistance post-compromission**.
 
 > [!WARNING]
-> Cette technique force également un downgrade vers RC4-HMAC pour la validation Kerberos, ce qui la rend inopérante sur des comptes strictement configurés en AES-only, et génère un artefact détectable : le chargement d'un driver non signé (`mimidrv.sys`) si LSASS tourne en mode protégé (PPL), journalisé en Event **7045**.
+> Les variantes historiques peuvent dépendre de RC4-HMAC pour certains chemins Kerberos et ne sont donc pas équivalentes à une prise en charge AES complète. Le chargement éventuel d'un driver (`mimidrv.sys`) constitue un artefact possible, pas un résultat garanti de chaque déploiement.
 
 **Exploitation :**
 
@@ -434,26 +452,27 @@ mimikatz # misc::skeleton
 
 **Impact :** authentification possible en tant que n'importe quel compte du domaine avec le mot de passe maître, sans jamais invalider les mots de passe réels, ce qui rend cette persistance particulièrement discrète tant qu'elle n'est pas activement recherchée.
 
-**Détection :** Sysmon Event **10** (accès à `lsass.exe` depuis un processus hors SYSTEM), Event **7045** pour le driver `mimidrv.sys` si présent, et surtout une authentification NTLM/Kerberos RC4 réussie avec un mot de passe qui ne correspond à aucune valeur connue historiquement pour ce compte. Cette technique ne survit pas à un redémarrage du DC, puisqu'elle ne patche que la mémoire du processus en cours.
+**Détection :** surveiller les accès suspects à `lsass.exe`, les installations de services ou drivers inattendues et les anomalies d'authentification RC4, sans prétendre déduire des journaux qu'un mot de passe maître inconnu a été utilisé. Cette technique ne survit généralement pas à un redémarrage du DC, puisqu'elle modifie la mémoire du processus en cours.
 
 ---
 
 ## VII. Synthèse Défensive
 
-| Famille                                | Event IDs clés                                     | Signal principal                                                         |
-| -------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------ |
-| ASREPRoast                             | 4768                                               | `Pre-Authentication Type = 0`                                            |
-| Kerberoasting                          | 4769                                               | `Ticket Encryption Type = 0x17` sur un SPN utilisateur, rafale multi-SPN |
-| Golden / Silver Ticket                 | 4769 sans 4768 correspondant                       | Absence de requête AS-REQ en amont, durée de vie anormale                |
-| Diamond / Sapphire Ticket              | 4769 avec `ENC-TKT-IN-SKEY` / `additional-tickets` | PAC incohérent avec le profil réel du compte                             |
-| Pass-the-Ticket                        | 4769, 4624                                         | Adresse source incohérente avec l'historique du compte                   |
-| Overpass-the-Hash                      | 4768                                               | `Ticket Encryption Type = 0x17` sur un compte habituellement AES         |
-| Délégation (Unconstrained/Constrained) | 4624, 4769                                         | `Transited Services` non vide, logon anormal sur machine en délégation   |
-| Skeleton Key                           | Sysmon 10, 7045                                    | Accès LSASS hors SYSTEM, driver non signé                                |
+| Famille                                | Event IDs clés                                     | Signal principal                                                          |
+| -------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------- |
+| ASREPRoast                             | 4768                                               | `Pre-Authentication Type = 0`                                             |
+| Kerberoasting                          | 4769                                               | `Ticket Encryption Type = 0x17` sur un SPN utilisateur, rafale multi-SPN  |
+| Golden Ticket                          | 4768, 4769                                         | PAC, durée de vie, SID/RID, KVNO et contexte anormaux                     |
+| Silver Ticket                          | 4624, journaux du service                          | Accès au service sans demande KDC correspondante, PAC ou contexte anormal |
+| Diamond / Sapphire Ticket              | 4769 avec `ENC-TKT-IN-SKEY` / `additional-tickets` | PAC incohérent avec le profil réel du compte                              |
+| Pass-the-Ticket                        | 4769, 4624                                         | Adresse source incohérente avec l'historique du compte                    |
+| Overpass-the-Hash                      | 4768                                               | `Ticket Encryption Type = 0x17` sur un compte habituellement AES          |
+| Délégation (Unconstrained/Constrained) | 4624, 4769                                         | `Transited Services` non vide, logon anormal sur machine en délégation    |
+| Skeleton Key                           | Sysmon 10, 7045                                    | Accès LSASS hors SYSTEM, driver non signé                                 |
 
 ### Principes de Durcissement Généraux
 
-- **Désactiver RC4** au niveau du domaine (`msDS-SupportedEncryptionTypes` en AES-only) pour retirer la compatibilité NTLM legacy de Kerberos, rendant ASREPRoast/Kerberoasting/Overpass-the-Hash nettement plus coûteux
+- **Désactiver RC4 comme etype Kerberos** au niveau du domaine (`msDS-SupportedEncryptionTypes` en AES-only) ; cela ne désactive pas NTLM, mais rend le cassage des réponses Kerberos nettement plus coûteux
 - **Changer le mot de passe `krbtgt` régulièrement** (deux fois de suite, pour invalider aussi la version précédente conservée par Windows)
 - **Groupe Protected Users** pour tout compte à privilèges : empêche NTLM, désactive la délégation, force AES uniquement, et limite la durée de vie du TGT
 - **Auditer les comptes en délégation** (`TRUSTED_FOR_DELEGATION`, `msDS-AllowedToDelegateTo`, `msDS-AllowedToActOnBehalfOfOtherIdentity`) au moins aussi régulièrement que les ACL du domaine
