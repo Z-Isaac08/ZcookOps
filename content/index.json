@@ -1,6 +1,36 @@
 [
   {
     "isFolder": false,
+    "slug": "lab-404bank",
+    "title": "Lab 404Bank : Reverse Engineering, Chaîne d'ACL en Cascade et ESC4 vers l'Administrateur",
+    "date": "05-09-2026",
+    "tags": [
+      "Active Directory",
+      "Reverse Engineering",
+      "Kerbrute",
+      "Password Spraying",
+      "BloodHound",
+      "GenericWrite",
+      "ForceChangePassword",
+      "Targeted Kerberoasting",
+      "Chisel",
+      "Port Forwarding",
+      "ADCS",
+      "ESC4",
+      "Certipy",
+      "HackSmarter",
+      "Windows",
+      "Pentest"
+    ],
+    "category": "pentest-labs",
+    "lang": "fr",
+    "description": "Pentest Active Directory d'une banque locale : reverse engineering d'un faux exécutable Windows (en réalité un binaire ELF Linux) pour en extraire un mot de passe caché, password spraying pour un premier accès, exploitation d'une chaîne d'ACL en cascade (GenericWrite, ForceChangePassword, AddMember) cartographiée avec BloodHound, pivot réseau via Chisel pour atteindre un service interne, cassage d'une archive protégée avec un dictionnaire généré à partir du site web, et élévation finale à l'Administrateur du domaine via un ESC4 (template hijacking) transformant un template presque sûr en ESC1 exploitable.",
+    "difficulty": "medium",
+    "platform": "HackSmarter",
+    "readingTime": 20
+  },
+  {
+    "isFolder": false,
     "slug": "lab-ctos",
     "title": "Lab Ctos : Désérialisation Pickle, Pivot Linux vers Windows et Abus de GPO jusqu'au krbtgt",
     "date": "30-08-2026",
@@ -24,7 +54,7 @@
     "category": "pentest-labs",
     "lang": "fr",
     "description": "Pentest complet sur 3 cibles (un contrôleur de domaine, une station de travail et un serveur web Linux) : désérialisation Pickle non sécurisée pour un contournement d'authentification puis une RCE, escalade Linux en chaîne via un script de sauvegarde vulnérable au symlink et l'appartenance au groupe disk, extraction de credentials Kerberos via un fichier keytab, password spraying à partir d'une politique de mot de passe reconstituée, élévation Windows via une ACL de service faible, cassage d'une base KeePass, puis compromission totale du domaine via une chaîne d'ACL (GenericWrite, AddMember, WriteOwner) menant à un abus de GPO sur l'OU des contrôleurs de domaine.",
-    "difficulty": "hard",
+    "difficulty": "medium",
     "platform": "HackSmarter",
     "readingTime": 23
   },
@@ -83,6 +113,41 @@
     "readingTime": 13
   },
   {
+    "isFolder": false,
+    "slug": "01-bootloader-x86-real-mode",
+    "title": "Partie 1 : Écriture d'un Bootloader 16-bit en Assembleur NASM",
+    "date": "22-08-2026",
+    "tags": [
+      "OS Development",
+      "Assembly x86",
+      "Bootloader",
+      "BIOS",
+      "Real Mode"
+    ],
+    "category": "playbooks",
+    "lang": "fr",
+    "description": "Comprendre le processus d'amorçage du BIOS, le secteur MBR de 512 octets, l'organisation de la mémoire en Real Mode et créer un premier secteur d'amorce exécutable sous QEMU.",
+    "readingTime": 2
+  },
+  {
+    "isFolder": false,
+    "slug": "02-gdt-protected-mode-kernel-c",
+    "title": "Partie 2 : GDT, Passage en Mode Protégé (32 bits) et Kernel C",
+    "date": "22-08-2026",
+    "tags": [
+      "OS Development",
+      "GDT",
+      "Protected Mode",
+      "Kernel",
+      "C",
+      "VGA Memory"
+    ],
+    "category": "playbooks",
+    "lang": "fr",
+    "description": "Configuration de la Global Descriptor Table (GDT), basculement du processeur en mode protégé 32 bits, et lien avec un noyau écrit en C interagissant directement avec la mémoire VGA.",
+    "readingTime": 3
+  },
+  {
     "isFolder": true,
     "slug": "os-dev-from-scratch",
     "title": "Création d'un Système d'Exploitation x86 (OS Development)",
@@ -101,48 +166,8 @@
     "description": "Série de playbooks techniques pas à pas pour concevoir un système d'exploitation à partir de zéro : du Master Boot Record (MBR) au mode protégé 32 bits, la GDT, l'IDT et un noyau minimal en C.",
     "difficulty": "insane",
     "platform": "Bare Metal / QEMU",
-    "readingTime": 5,
-    "items": [
-      {
-        "slug": "01-bootloader-x86-real-mode",
-        "folderSlug": "os-dev-from-scratch",
-        "title": "Partie 1 : Écriture d'un Bootloader 16-bit en Assembleur NASM",
-        "date": "22-08-2026",
-        "tags": [
-          "OS Development",
-          "Assembly x86",
-          "Bootloader",
-          "BIOS",
-          "Real Mode"
-        ],
-        "category": "playbooks",
-        "lang": "fr",
-        "description": "Comprendre le processus d'amorçage du BIOS, le secteur MBR de 512 octets, l'organisation de la mémoire en Real Mode et créer un premier secteur d'amorce exécutable sous QEMU.",
-        "difficulty": "insane",
-        "platform": "Bare Metal / QEMU",
-        "readingTime": 2
-      },
-      {
-        "slug": "02-gdt-protected-mode-kernel-c",
-        "folderSlug": "os-dev-from-scratch",
-        "title": "Partie 2 : GDT, Passage en Mode Protégé (32 bits) et Kernel C",
-        "date": "22-08-2026",
-        "tags": [
-          "OS Development",
-          "GDT",
-          "Protected Mode",
-          "Kernel",
-          "C",
-          "VGA Memory"
-        ],
-        "category": "playbooks",
-        "lang": "fr",
-        "description": "Configuration de la Global Descriptor Table (GDT), basculement du processeur en mode protégé 32 bits, et lien avec un noyau écrit en C interagissant directement avec la mémoire VGA.",
-        "difficulty": "insane",
-        "platform": "Bare Metal / QEMU",
-        "readingTime": 3
-      }
-    ]
+    "readingTime": 0,
+    "items": []
   },
   {
     "isFolder": false,
@@ -168,7 +193,7 @@
     "category": "playbooks",
     "lang": "fr",
     "description": "Guide de référence complet sur le protocole Kerberos en environnement Active Directory : théorie du protocole (échanges AS/TGS/AP, clés, PAC, PKINIT), attaques par cassage offline, forge de tickets, vol et réutilisation de credentials, abus de délégation, et détection, pensé pour comprendre chaque attaque au niveau du protocole plutôt qu'au niveau des commandes d'outils.",
-    "readingTime": 30
+    "readingTime": 35
   },
   {
     "isFolder": false,

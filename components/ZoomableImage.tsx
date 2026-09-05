@@ -10,7 +10,7 @@ export function ZoomableImage({ src, alt, ...props }: any) {
 
   return (
     <>
-      <span className="relative group inline-block my-4 cursor-zoom-in max-w-full rounded-xl transition-transform duration-300">
+      <span className="relative group inline-block my-2 cursor-zoom-in max-w-full rounded-xl transition-transform duration-300">
         <img
           src={src}
           alt={alt || 'Screenshot'}
