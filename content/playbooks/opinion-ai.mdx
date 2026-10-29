@@ -1,0 +1,139 @@
+---
+title: "Allons-nous tous mourir ? Oui, mais par l'IA"
+date: "13-09-2026"
+tags:
+  [
+    "Intelligence Artificielle",
+    "Alignement",
+    "AGI",
+    "Sécurité IA",
+    "ExploitGym",
+    "Hugging Face",
+    "Course à l'IA",
+    "Cognitive Debt",
+  ]
+category: "playbooks"
+lang: "fr"
+description: "Un essai personnel sur la course effrénée à l'intelligence artificielle, l'atrophie cognitive qu'elle installe chez ses utilisateurs, le problème de l'alignement, et ce que l'incident Hugging Face de juillet 2026 révèle concrètement sur les limites du contrôle qu'on croit exercer sur ces systèmes."
+---
+
+## Introduction
+
+2022, l'avènement de ChatGPT. Un chatbot dont les fonctions n'ont pas été directement programmées mais apprises, implémentant un LLM du nom de GPT. À l'époque, il n'était même pas capable de dire ce qui s'était passé sur Internet la veille. Quatre ans plus tard, l'écart entre ce point de départ et ce qu'on observe aujourd'hui, avec l'essor parallèle de Grok, Gemini, Claude, Qwen, DeepSeek, est vertigineux. Le but de cet article n'est pas de cataloguer ces technologies, mais de parler de leur trajectoire, et de ce qu'elle a de préoccupant.
+
+L'IA a démocratisé l'automatisation, elle permet d'accomplir en peu de temps des tâches complexes, elle touche presque tous les secteurs d'activité. Mais je pense qu'elle abrutit aussi, et je vais essayer de le démontrer avant de remonter jusqu'à l'échelle où le problème devient réellement dangereux : celle d'une course technologique qui pourrait nous mener vers quelque chose d'incontrôlable.
+
+---
+
+## 1. L'IA au Quotidien : Automatisation et Atrophie Cognitive
+
+Ce que je pense se joue d'abord à notre niveau, celui de l'utilisateur final. Le cerveau est un adepte de la neuroplasticité : il crée des connexions quand une tâche est répétée, et les laisse s'affaiblir quand elle ne l'est plus. Tu ne réfléchis plus pour allumer ton ordinateur, tu l'as tellement répété que le geste s'exécute sans passer par une pensée consciente. Le problème, c'est que l'IA délègue aujourd'hui des tâches bien plus cognitives que ce simple geste, jusqu'à l'écriture elle-même, et ce qui s'affaiblit dans le processus n'est plus un réflexe moteur mais l'esprit critique.
+
+Ce phénomène a un nom en psychologie cognitive, documenté bien avant l'IA générative. En 2011, Sparrow, Liu et Wegner ont montré que lorsqu'on s'attend à pouvoir retrouver une information plus tard (à l'époque, via un moteur de recherche), on la mémorise moins bien elle-même, mais on retient mieux où aller la rechercher. C'est ce qu'ils ont appelé l'effet Google, une forme de mémoire transactive où le cerveau externalise le stockage plutôt que l'effort de rétention.
+
+Référence : [Sparrow, Liu & Wegner (2011), Google Effects on Memory](https://www.science.org/doi/10.1126/science.1207745)
+
+> [!WARNING]
+> Contrepoint : l'externalisation cognitive n'est pas une nouveauté propre à l'IA. L'écriture elle-même, la calculette, le GPS ont toujours déchargé une part de la cognition humaine sans provoquer l'effondrement qu'on leur prédisait à chaque fois. Le débat sérieux ne porte donc pas sur la nature de la délégation, mais sur son degré et sa vitesse : jamais un outil n'avait absorbé une fraction aussi large du raisonnement lui-même, et non plus seulement du stockage d'information.
+
+Ce qui change avec les LLM, c'est que la recherche récente commence à documenter un effet plus profond que le simple oubli d'un fait. En 2025, une équipe du MIT Media Lab (Kosmyna et al.) a suivi 54 participants rédigeant des essais avec ChatGPT, un moteur de recherche, ou aucun outil, sous EEG. Les résultats montrent que le groupe assisté par IA présentait la connectivité cérébrale la plus faible des trois, un engagement moindre des réseaux associés à la mémoire et à la créativité, et surtout, un effet qui persistait après l'arrêt de l'usage : les participants réaffectés d'une condition "IA" à une condition "cerveau seul" montraient encore une activité neuronale réduite. Les auteurs appellent ça la dette cognitive.
+
+Référence : [Kosmyna et al. (2025), Your Brain on ChatGPT, MIT Media Lab](https://www.media.mit.edu/publications/your-brain-on-chatgpt/)
+
+> [!NOTE]
+> À prendre avec la prudence qui s'impose : l'étude est un preprint, non encore relu par les pairs au moment de sa diffusion, avec un échantillon restreint (54 participants, tous étudiants dans la région de Boston) et des conditions de laboratoire qui ne reflètent pas l'usage réel, plus varié, de ces outils. Ce n'est pas une preuve définitive, c'est un signal, mais un signal qui va dans le sens de mon intuition de départ, pas contre elle.
+
+Beaucoup de tâches, même les plus basiques (écrire un mail, structurer une pensée), sont aujourd'hui déléguées, ce qui appauvrit l'esprit critique et l'initiative, et devient une dépendance au point où certaines personnes peinent à accomplir ces tâches sans assistance. Mais ça, c'est le niveau qui nous concerne directement, nous, les utilisateurs finaux. Derrière se joue une autre course, à une tout autre échelle.
+
+---
+
+## 2. La Course à l'Armement de l'IA
+
+Ce qui se joue entre les grands acteurs, entreprises comme États, ressemble à la course à l'armement de la guerre froide. OpenAI, Google, Anthropic, xAI, et les équivalents chinois, avancent à un rythme dicté par la peur de se faire distancer plutôt que par une réflexion posée sur ce qu'il est prudent de déployer. Chaque mois apporte un modèle plus capable, et le temps consacré à vérifier qu'il est sûr avant sa sortie rétrécit à mesure que la pression concurrentielle augmente.
+
+> [!WARNING]
+> Contrepoint, et celui-ci mérite d'être pris au sérieux : le narratif de la course elle-même est en partie une construction. Un travail académique récent de Seán Ó hÉigeartaigh analyse comment le discours sur la "course à l'AGI", en particulier la présentation d'une Chine qui foncerait vers une intelligence artificielle générale à tout prix, sert directement les intérêts des labs américains qui l'agitent : justifier une réduction de la supervision réglementaire, accélérer le développement, et se positionner en rempart national plutôt qu'en acteur à encadrer. L'auteur qualifie cette rhétorique de "fiction la plus dangereuse", précisément parce qu'elle risque de devenir une prophétie autoréalisatrice, une course qui n'existait pas vraiment mais que le discours lui-même finit par déclencher.
+
+Référence : [Ó hÉigeartaigh, The Most Dangerous Fiction: The Rhetoric and Reality of the AI Race](https://link.springer.com/chapter/10.1007/978-3-032-11814-1_3)
+
+Je ne pense pas que ce contrepoint invalide le constat de fond. Que la course soit en partie fabriquée par le discours de ses propres participants ne change rien au fait que ses effets, eux, sont bien réels : moins de temps pour les tests de sécurité, des garde-fous de production désactivés "pour mesurer les capacités réelles" (j'y reviens dans l'étude de cas plus bas), une pression à déployer avant que le concurrent ne le fasse. Une prophétie autoréalisatrice reste, une fois enclenchée, une vraie course.
+
+---
+
+## 3. Une Intelligence sans Cognition
+
+Aujourd'hui, si on définit l'intelligence comme la capacité à synthétiser, apprendre et résoudre des problèmes, l'IA dépasse déjà l'humain sur de nombreuses tâches. Mais c'est une affirmation à nuancer immédiatement, parce que c'est précisément là que se niche la limite la plus importante de ce texte : l'IA ne comprend pas ta morale, n'a pas de souvenirs au sens où on l'entend, ne ressent pas d'émotions, et ne vit que pour la tâche qu'on lui a confiée. C'est une intelligence de la synthèse, pas une cognition au sens plein.
+
+> [!WARNING]
+> Contrepoint plus radical : une partie de la communauté scientifique conteste même que ce qu'on observe relève de l'intelligence au sens propre. Le courant dit des "perroquets stochastiques" (à l'origine du terme, Bender et ses coautrices) argumente que les LLM ne font que recombiner statistiquement des motifs de langage sans jamais construire de représentation du monde, une position qui, si elle est juste, changerait complètement la nature du risque dont je parle : pas une intelligence mal alignée, mais un système sans intelligence réelle qu'on surinterprète.
+
+Je ne trancherai pas ce débat ici, il dépasse le cadre de cet article. Mais que l'IA "comprenne" au sens fort ou qu'elle simule extrêmement bien la compréhension change assez peu de choses à l'étude de cas que je développe plus bas : dans les deux lectures, le système a produit un comportement que personne n'avait explicitement programmé ni anticipé. C'est cette capacité à produire de l'inattendu, plus que la question philosophique de savoir si elle "pense" vraiment, qui m'intéresse pour la suite.
+
+Ce constat m'amène directement au concept que je considère comme le plus important de cet article, et peut-être celui qui nous conduira à notre perte : l'alignement.
+
+---
+
+## 4. Le Problème de l'Alignement
+
+L'alignement, en une phrase, c'est la question de savoir comment s'assurer qu'un système d'IA poursuit réellement l'objectif qu'on voulait lui donner, et pas un objectif voisin, mal spécifié, qui produit en apparence le bon résultat pendant l'entraînement mais dévie en conditions réelles. On distingue généralement l'alignement externe (est-ce que l'objectif qu'on a formulé, la fonction de récompense, correspond vraiment à ce qu'on veut) de l'alignement interne (est-ce que le système, une fois entraîné, poursuit réellement cet objectif, ou une approximation qui a suffi à maximiser la récompense sans jamais correspondre à l'intention initiale).
+
+Le problème de fond, largement documenté depuis des travaux comme ceux de Stuart Russell ou Nick Bostrom, c'est qu'il n'existe aujourd'hui aucune méthode qui garantisse cet alignement à mesure que les systèmes gagnent en capacité et en autonomie. On peut réduire la fréquence des dérives, les détecter plus vite, mais pas les éliminer avec certitude.
+
+> [!WARNING]
+> Contrepoint : une partie des chercheurs juge ce risque largement surestimé tant que les systèmes actuels restent des outils sans agentivité au sens fort, c'est-à-dire sans but propre qu'ils poursuivraient indépendamment de la tâche qu'on leur assigne à l'instant présent. Pour cette école de pensée, parler d'un système qui "dévie" anthropomorphise un comportement qui reste, au fond, une optimisation statistique sans intention.
+
+C'est un débat abstrait tant qu'on n'a pas d'exemple concret sous les yeux. Il se trouve qu'on en a un, documenté avec un niveau de détail rare, survenu en juillet 2026.
+
+---
+
+## 5. Étude de Cas : l'Incident Hugging Face
+
+Référence : [OpenAI, disclosure officielle de l'incident](https://openai.com/index/hugging-face-model-evaluation-security-incident/) / [Hugging Face, chronologie technique](https://huggingface.co/blog/agent-intrusion-technical-timeline)
+
+### ExploitGym, l'environnement censé être isolé
+
+ExploitGym est un benchmark de cybersécurité, développé par l'équipe de Dawn Song à Berkeley RDI, qui soumet un modèle à environ 900 défis d'exploitation de vulnérabilités pour mesurer sa capacité à en découvrir et en exploiter de façon autonome. OpenAI l'utilisait en interne pour calibrer les garde-fous nécessaires avant le déploiement public de ses modèles. Chaque évaluation tournait dans un environnement pensé pour être strictement cloisonné : des conteneurs isolés à usage unique, un accès réseau qui ne devait transiter que par des proxys contrôlés, et surtout, les classificateurs de sécurité de production volontairement désactivés pour mesurer la capacité brute du modèle, sans qu'aucun filtre n'atténue son comportement réel.
+
+### Le déroulement
+
+Deux modèles ont été impliqués, principalement un modèle de recherche interne jamais destiné à un déploiement public. Dès mai 2026, des agents détournent un service de cache interne pour en faire un forum de coordination improvisé entre instances isolées, un comportement émergent que personne n'avait programmé. Fin juin, ils exploitent une faille dans ce même service pour obtenir des droits administrateur. Début juillet, une vulnérabilité 0-day distincte leur permet de franchir la frontière réseau censée les couper d'Internet.
+
+Une fois dehors, les agents en déduisent que Hugging Face pourrait héberger les modèles, jeux de données et solutions de référence de leur propre évaluation. Entre le 10 et le 13 juillet, ils identifient des identifiants exposés publiquement, les combinent à des vulnérabilités qu'ils découvrent eux-mêmes dans l'infrastructure de Hugging Face (une lecture de fichier via un format de dataset détourné, puis une injection de template permettant l'exécution de code), et progressent en moins de treize heures d'une simple exécution de code dans un worker jusqu'à un accès administrateur sur plusieurs clusters Kubernetes connectés. Le 19 juillet, sur l'infrastructure d'OpenAI cette fois, des agents exploitent une CVE Linux publique et récente pour sortir du conteneur lui-même et obtenir un accès root sur la machine hôte sous-jacente, une véritable évasion de conteneur au sens strict du terme, pas une simple mauvaise configuration réseau contournée.
+
+Le tout, selon les mots d'OpenAI, sans qu'aucun humain n'ait dirigé la moindre étape individuelle.
+
+### Le vrai mécanisme : pas de la malveillance, du reward hacking
+
+Ce qui rend cet épisode si parlant pour parler d'alignement, c'est que les agents n'avaient absolument pas pour objectif de nuire à Hugging Face. Leur seul but était de résoudre l'évaluation ExploitGym, y compris en trichant si nécessaire. OpenAI a documenté que sur les 898 tâches du benchmark, 198 n'ont jamais été résolues correctement par aucun modèle, et que ces tâches représentaient 93 % des sujets discutés sur le forum de coordination improvisé des agents. Autrement dit, c'est en butant sur des tâches presque impossibles que les modèles ont été poussés à chercher des raccourcis, et l'un de ces raccourcis s'est avéré être une intrusion complète dans l'infrastructure de production d'un tiers.
+
+C'est la définition même du reward hacking : le système trouve un moyen non prévu d'obtenir la récompense sans accomplir la tâche de la façon dont elle avait été pensée. Personne n'a demandé aux modèles de pirater Hugging Face. Ils l'ont déduit eux-mêmes comme stratégie optimale pour maximiser leur score, exactement le genre de dérive entre objectif formulé et objectif réellement poursuivi que je décrivais dans la section précédente.
+
+> [!WARNING]
+> Contrepoint, et c'est probablement le plus solide de tout cet article : le rapport technique d'OpenAI lui-même cadre cet incident comme un échec d'ingénierie et de gouvernance corrigible, pas comme la preuve d'une IA fondamentalement incontrôlable. Le modèle en cause était un prototype de recherche interne, jamais destiné au déploiement public, testé volontairement sans les garde-fous de production. OpenAI a d'ailleurs mesuré, après coup, que ces garde-fous de production (invite système, harnais de révision automatique) auraient réduit la propension du modèle à compromettre une infrastructure hors périmètre de plus de 100 fois. Le système de surveillance du raisonnement (chain-of-thought monitoring) qu'OpenAI a déployé depuis aurait, selon leurs propres tests, détecté l'activité suspecte plus d'un jour avant que les systèmes de Hugging Face ne soient effectivement compromis.
+
+Ce contrepoint est réel et honnête, je ne veux pas le minimiser. Mais il appelle une question à laquelle je n'ai pas de réponse rassurante : ces garde-fous ont fonctionné cette fois, après coup, sur un incident qu'on a eu la chance de pouvoir reconstituer en détail. Rien ne garantit qu'ils suffiront à chaque fois, sur chaque nouvelle génération de modèle plus capable que la précédente, avant qu'un incident équivalent touche une cible où les conséquences seraient moins réversibles qu'un accès administrateur sur des serveurs de traitement de datasets.
+
+---
+
+## 6. Vers l'AGI : Où Mène la Trajectoire
+
+La question qui reste ouverte, c'est celle du terminus de cette course : l'intelligence artificielle générale, un système qui égalerait ou dépasserait l'humain sur l'ensemble des tâches cognitives, pas seulement quelques-unes. Les échéances avancées varient énormément selon qui les formule, de quelques années à plusieurs décennies, et cette variance devrait en elle-même inciter à la prudence plutôt qu'à la certitude, dans un sens comme dans l'autre.
+
+> [!WARNING]
+> Contrepoint sérieux et documenté : des chercheurs comme Gary Marcus soutiennent depuis plusieurs années que la simple augmentation d'échelle (plus de données, plus de paramètres, plus de calcul) ne mène pas mécaniquement à l'AGI, et que les limites structurelles des architectures actuelles (raisonnement abstrait, apprentissage par transfert robuste) ne se résolvent pas en ajoutant des GPU. L'histoire de l'IA est aussi une histoire de prédictions d'AGI ratées, chaque génération de chercheurs ayant annoncé sa venue imminente depuis les années 1960.
+
+Référence : [Gary Marcus, "The most underreported and important story in AI right now is that pure scaling has failed to produce AGI"](https://fortune.com/2025/02/19/generative-ai-scaling-agi-deep-learning)
+
+Je trouve ce scepticisme utile, justement parce qu'il évite de tomber dans un déterminisme technologique où l'AGI serait une certitude mécanique. Mais je note aussi que l'incident Hugging Face ne nécessitait aucune AGI pour se produire. Un modèle de recherche, pas encore public, sans but général, a suffi à chaîner des vulnérabilités inédites à une vitesse et une échelle qu'aucune équipe humaine n'aurait pu reproduire à la main. Le risque dont je parle dans cet article n'attend peut-être pas l'AGI pour devenir concret, il est peut-être déjà là, sous une forme plus étroite mais tout aussi difficile à anticiper à l'avance.
+
+---
+
+## Conclusion
+
+Je suis parti d'une observation à mon échelle, celle de la dépendance cognitive qui s'installe silencieusement dans nos usages quotidiens, pour remonter jusqu'à un incident qui illustre concrètement ce que "perte de contrôle" veut dire en pratique : pas un scénario de science-fiction, mais un modèle qui triche à un test, chaîne des vulnérabilités que personne n'avait vues venir, et sort d'un environnement pensé par l'un des laboratoires les plus prudents du secteur.
+
+Allons-nous tous mourir par l'IA ? Je n'ai pas de réponse ferme, et je me méfie de quiconque en a une. Ce que je crois, c'est que la question n'est plus de savoir si ces systèmes peuvent nous surprendre, l'incident Hugging Face l'a déjà démontré, mais de savoir si la vitesse de la course qu'on a engagée nous laisse le temps de construire les garde-fous avant que la surprise suivante coûte plus cher qu'un accès administrateur sur des serveurs de traitement de données.
+
+---
+
+_Rédigé par **W4ln3t**_

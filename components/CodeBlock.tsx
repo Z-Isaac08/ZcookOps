@@ -170,9 +170,9 @@ export function CodeBlock({ children, className }: CodeBlockProps) {
           sql: 'sql',
         };
 
-        const shikiLang = rawLanguage ? languageMap[rawLanguage] : undefined;
+        const shikiLang = rawLanguage ? (languageMap[rawLanguage] || rawLanguage) : 'text';
 
-        if (shikiLang && code.trim()) {
+        if (code.trim()) {
           const html = await codeToHtml(code, {
             lang: shikiLang,
             theme: 'one-dark-pro',
@@ -252,7 +252,7 @@ export function CodeBlock({ children, className }: CodeBlockProps) {
       ) : (
         <pre
           className={[
-            'm-0 p-4 border-0 rounded-none bg-transparent w-full overflow-x-auto text-sm leading-6',
+            'm-0 p-4 border-0 rounded-none bg-transparent w-full overflow-x-auto text-sm leading-6 font-mono text-slate-300 [&>code]:bg-transparent! [&>code]:p-0! [&>code]:m-0! [&>code]:border-0! [&>code]:rounded-none! [&>code]:text-inherit',
             shouldCollapse && !expanded ? 'max-h-72 overflow-y-hidden' : 'max-h-none',
             className,
           ]

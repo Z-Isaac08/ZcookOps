@@ -4,7 +4,16 @@ import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/ca
 import { WriteupCard } from '@/components/WriteupCard';
 import { getAllWriteups, getWriteupsByCategory } from '@/lib/content';
 import { Locale, getDictionary } from '@/lib/i18n';
-import { ArrowRight, BookOpen, ChevronRight, Cpu, Layers, Shield, Sparkles, Terminal } from 'lucide-react';
+import {
+  ArrowRight,
+  BookOpen,
+  ChevronRight,
+  Cpu,
+  Layers,
+  Shield,
+  Sparkles,
+  Terminal,
+} from 'lucide-react';
 import Link from 'next/link';
 import React from 'react';
 
@@ -105,7 +114,6 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             <span>{lang === 'fr' ? 'Consulter les Playbooks' : 'View Playbooks'}</span>
           </Link>
         </div>
-
       </section>
 
       {/* Categories Grid */}
@@ -190,7 +198,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                 <span className="text-[11px] font-mono text-slate-400 ml-2">whoami</span>
               </div>
               <div className="p-4 font-mono text-xs text-slate-300 space-y-2">
-                <p className="text-primary font-bold">zcook@ops ~ % whoami</p>
+                <p className="text-primary font-bold">w4ln3t@ops ~ % whoami</p>
                 <p className="text-slate-400"># Cyber Security & AI Researcher</p>
                 <div className="pt-2 border-t border-slate-800/80 space-y-1">
                   <p>
@@ -212,8 +220,12 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                 {dict.about.title}
               </h2>
               <div className="space-y-4 text-muted-foreground leading-relaxed">
-                <p className="text-base md:text-lg">{renderFormattedText(dict.about.description1)}</p>
-                <p className="text-base md:text-lg">{renderFormattedText(dict.about.description2)}</p>
+                <p className="text-base md:text-lg">
+                  {renderFormattedText(dict.about.description1)}
+                </p>
+                <p className="text-base md:text-lg">
+                  {renderFormattedText(dict.about.description2)}
+                </p>
               </div>
 
               <div className="flex flex-wrap justify-center md:justify-start gap-2.5 pt-2">
@@ -237,4 +249,3 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
     </main>
   );
 }
-

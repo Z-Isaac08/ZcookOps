@@ -1,6 +1,226 @@
 [
   {
     "isFolder": false,
+    "slug": "lab-cap",
+    "title": "Lab Cap : IDOR sur PCAP et Privilege Escalation via cap_setuid",
+    "date": "25-10-2026",
+    "tags": [
+      "Linux",
+      "HackTheBox",
+      "IDOR",
+      "PCAP",
+      "Wireshark",
+      "FTP",
+      "Linux Capabilities",
+      "cap_setuid",
+      "Python",
+      "Privilege Escalation",
+      "Easy"
+    ],
+    "category": "pentest-labs",
+    "lang": "fr",
+    "description": "Machine Linux Easy HackTheBox : un dashboard de sécurité expose une IDOR sur ses captures réseau. Le fichier PCAP de l'ID 0 contient une session FTP en clair avec des credentials valides. Une fois connecté en SSH, python3.8 est configuré avec la capability cap_setuid, permettant de changer d'UID vers root en une ligne.",
+    "difficulty": "easy",
+    "platform": "HackTheBox",
+    "readingTime": 9
+  },
+  {
+    "isFolder": false,
+    "slug": "lab-stellarcomms",
+    "title": "Lab StellarComms : Privilege Escalation AD via WriteOwner, gMSA et DCSync",
+    "date": "10-10-2026",
+    "tags": [
+      "Pentest",
+      "Active Directory",
+      "BloodHound",
+      "WriteOwner",
+      "ForceChangePassword",
+      "WriteDACL",
+      "gMSA",
+      "DCSync",
+      "FTP",
+      "Firefox Credentials",
+      "HackSmarter",
+      "Privilege Escalation",
+      "ACL Abuse"
+    ],
+    "category": "pentest-labs",
+    "lang": "fr",
+    "description": "Compromission d'un domaine Active Directory depuis un compte junior sans mot de passe connu : FTP anonyme expose un guide utilisateur avec le mot de passe par défaut, BloodHound cartographie deux chemins d'escalade ACL distincts (WriteOwner puis WriteDACL), l'extraction de credentials Firefox permet le pivot latéral vers astro.researcher, et la lecture du mot de passe gMSA de SATLINK-SERVICE$ conduit à un DCSync total du domaine stellarcomms.local.",
+    "difficulty": "medium",
+    "platform": "HackSmarter",
+    "readingTime": 15
+  },
+  {
+    "isFolder": false,
+    "slug": "lab-newhire",
+    "title": "Lab NewHire : Onboarding Mal Sécurisé, KeePass et MSSQL vers SYSTEM",
+    "date": "04-10-2026",
+    "tags": [
+      "Windows",
+      "SMB",
+      "Password Spraying",
+      "KeePass",
+      "keepass2john",
+      "MSSQL",
+      "Impersonation",
+      "xp_cmdshell",
+      "Chisel",
+      "Port Forwarding",
+      "SeImpersonatePrivilege",
+      "DeadPotato",
+      "LSA Secrets",
+      "HackSmarter",
+      "OSCP-LK"
+    ],
+    "category": "pentest-labs",
+    "lang": "fr",
+    "description": "Lab standalone Windows (hors domaine) de style OSCP : un processus d'onboarding exposé via SMB révèle un mot de passe par défaut et la liste des nouveaux employés. Un spray permet d'accéder à un partage IT contenant une base KeePass chiffrée. Une fois le mot de passe cassé, les credentials récupérés ouvrent un accès WinRM puis MSSQL où l'impersonation de sa active xp_cmdshell. Depuis un shell sysadmin, DeadPotato abuse de SeImpersonatePrivilege pour dumper les LSA Secrets en mémoire et récupérer le mot de passe de sysadmin en clair.",
+    "difficulty": "easy",
+    "platform": "HackSmarter / LainKusanagi OSCP-LK",
+    "readingTime": 17
+  },
+  {
+    "isFolder": false,
+    "slug": "lab-forensics",
+    "title": "Lab Forensics : Microsoft Access, LSA Secrets, Dump LSASS et Ticket Kerberos Volé en Pass-the-Ticket",
+    "date": "27-09-2026",
+    "tags": [
+      "Active Directory",
+      "GenericWrite",
+      "Targeted Kerberoasting",
+      "Microsoft Access",
+      "office2john",
+      "Binary Path Hijacking",
+      "Mimikatz",
+      "LSA Secrets",
+      "SeDebugPrivilege",
+      "ProcDump",
+      "pypykatz",
+      "LSASS Dump",
+      "Kirbi",
+      "Pass-the-Ticket",
+      "DCSync",
+      "HackSmarter",
+      "Windows",
+      "Pentest"
+    ],
+    "category": "pentest-labs",
+    "lang": "fr",
+    "description": "Lab multi-machine en style OSCP : Targeted Kerberoasting pour un premier pivot, base Microsoft Access chiffrée cassée avec office2john, binary path hijacking sur un service Windows pour obtenir SYSTEM, extraction des secrets LSA via Mimikatz pour récupérer le mot de passe d'un service en clair, dump LSASS avec ProcDump et extraction offline avec pypykatz pour un hash d'administrateur local, puis exploitation d'un ticket Kerberos TGT (.kirbi) abandonné par les attaquants pour un DCSync final.",
+    "difficulty": "medium",
+    "platform": "HackSmarter / LainKusanagi OSCP-LK",
+    "readingTime": 20
+  },
+  {
+    "isFolder": false,
+    "slug": "lab-hsm-defense",
+    "title": "Lab HSM Defense : Mail Poisoning, Délégation Contrainte Construite à la Main et DCSync sans NTLM",
+    "date": "24-09-2026",
+    "tags": [
+      "Active Directory",
+      "NTLM Disabled",
+      "ODT Mail Poisoning",
+      "Timeroasting",
+      "BloodHound",
+      "dacledit",
+      "ModifyDN",
+      "WriteOwner",
+      "ForceChangePassword",
+      "GenericWrite",
+      "Targeted Kerberoasting",
+      "Salt Mismatch",
+      "Constrained Delegation",
+      "Protocol Transition",
+      "DCSync",
+      "HackSmarter",
+      "Windows",
+      "Pentest"
+    ],
+    "category": "pentest-labs",
+    "lang": "fr",
+    "description": "Pentest black-box d'un contrôleur de domaine d'un contractant de défense avec NTLM complètement désactivé : mail poisoning via un fichier ODT malicieux envoyé à une adresse de recrutement pour capturer un hash NTLMv2, chaîne d'abus d'ACL (WriteOwner/ForceChangePassword) après un Timeroasting, énumération DACL granulaire avec dacledit, déplacement d'un objet AD par ModifyDN, downgrade de chiffrement Kerberos pour contourner un salt mismatch, capture de credentials SSH via un faux serveur, et élévation au Domain Admin via une délégation contrainte avec transition de protocole configurée manuellement.",
+    "difficulty": "hard",
+    "platform": "HackSmarter",
+    "readingTime": 29
+  },
+  {
+    "isFolder": false,
+    "slug": "lab-uniphantom",
+    "title": "Lab Uniphantom : Console Étudiante, Déchiffrement AES et Délégation Contrainte vers le Domain Admin",
+    "date": "15-09-2026",
+    "tags": [
+      "Active Directory",
+      "Username Spraying",
+      "AddSelf",
+      "AddMember",
+      "WinLogon",
+      "PrivescCheck",
+      "Wine",
+      "Reverse Engineering",
+      "AES Decryption",
+      "Constrained Delegation",
+      "Protocol Transition",
+      "S4U2Self",
+      "S4U2Proxy",
+      "BloodHound",
+      "VM Locale"
+    ],
+    "category": "pentest-labs",
+    "lang": "fr",
+    "description": "Pentest d'un contrôleur de domaine universitaire (VM locale) : découverte d'une clé AES sur une console web étudiante, username spraying, enchaînement de droits AddSelf et AddMember pour accéder à un partage verrouillé et déchiffrer le mot de passe d'un étudiant, contournement d'une restriction de connexion via le groupe Restricted_Remote, découverte de credentials WinLogon via PrivescCheck, analyse d'un logiciel Windows sous Linux avec Wine pour en extraire des identifiants cachés, et compromission finale du domaine via une délégation contrainte avec transition de protocole (S4U2Self/S4U2Proxy).",
+    "difficulty": "easy",
+    "platform": "Subzero / BuyMeACoffee",
+    "readingTime": 19
+  },
+  {
+    "isFolder": false,
+    "slug": "opinion-ai",
+    "title": "Allons-nous tous mourir ? Oui, mais par l'IA",
+    "date": "13-09-2026",
+    "tags": [
+      "Intelligence Artificielle",
+      "Alignement",
+      "AGI",
+      "Sécurité IA",
+      "ExploitGym",
+      "Hugging Face",
+      "Course à l'IA",
+      "Cognitive Debt"
+    ],
+    "category": "playbooks",
+    "lang": "fr",
+    "description": "Un essai personnel sur la course effrénée à l'intelligence artificielle, l'atrophie cognitive qu'elle installe chez ses utilisateurs, le problème de l'alignement, et ce que l'incident Hugging Face de juillet 2026 révèle concrètement sur les limites du contrôle qu'on croit exercer sur ces systèmes.",
+    "readingTime": 14
+  },
+  {
+    "isFolder": false,
+    "slug": "ntlm",
+    "title": "NTLM : Protocole, Internals et Attaques",
+    "date": "10-09-2026",
+    "tags": [
+      "NTLM",
+      "NTLMv1",
+      "NTLMv2",
+      "Pass-the-Hash",
+      "NTLM Relay",
+      "Responder",
+      "Challenge-Response",
+      "Active Directory",
+      "Windows Internals",
+      "Défense",
+      "Event IDs",
+      "Coercion",
+      "MIC",
+      "EPA"
+    ],
+    "category": "playbooks",
+    "lang": "fr",
+    "description": "Référence technique complète sur NTLM : histoire du protocole (LM, NTLMv1, NTLMv2), mécanique du challenge-response, intégration dans Active Directory, attaques offensives majeures (Pass-the-Hash, NTLM Relay, Capture NTLMv2, Coercition d'authentification) et stratégies de détection défensive.",
+    "readingTime": 26
+  },
+  {
+    "isFolder": false,
     "slug": "lab-404bank",
     "title": "Lab 404Bank : Reverse Engineering, Chaîne d'ACL en Cascade et ESC4 vers l'Administrateur",
     "date": "05-09-2026",
@@ -27,7 +247,7 @@
     "description": "Pentest Active Directory d'une banque locale : reverse engineering d'un faux exécutable Windows (en réalité un binaire ELF Linux) pour en extraire un mot de passe caché, password spraying pour un premier accès, exploitation d'une chaîne d'ACL en cascade (GenericWrite, ForceChangePassword, AddMember) cartographiée avec BloodHound, pivot réseau via Chisel pour atteindre un service interne, cassage d'une archive protégée avec un dictionnaire généré à partir du site web, et élévation finale à l'Administrateur du domaine via un ESC4 (template hijacking) transformant un template presque sûr en ESC1 exploitable.",
     "difficulty": "medium",
     "platform": "HackSmarter",
-    "readingTime": 20
+    "readingTime": 22
   },
   {
     "isFolder": false,
@@ -56,7 +276,7 @@
     "description": "Pentest complet sur 3 cibles (un contrôleur de domaine, une station de travail et un serveur web Linux) : désérialisation Pickle non sécurisée pour un contournement d'authentification puis une RCE, escalade Linux en chaîne via un script de sauvegarde vulnérable au symlink et l'appartenance au groupe disk, extraction de credentials Kerberos via un fichier keytab, password spraying à partir d'une politique de mot de passe reconstituée, élévation Windows via une ACL de service faible, cassage d'une base KeePass, puis compromission totale du domaine via une chaîne d'ACL (GenericWrite, AddMember, WriteOwner) menant à un abus de GPO sur l'OU des contrôleurs de domaine.",
     "difficulty": "medium",
     "platform": "HackSmarter",
-    "readingTime": 23
+    "readingTime": 25
   },
   {
     "isFolder": false,
@@ -82,7 +302,7 @@
     "description": "Pentest Active Directory sur un domaine en cours d'extension : RID Brute Force en session invité, Timeroasting pour récupérer le hash d'un compte machine sans authentification, découverte de credentials en clair dans un script SYSVOL, contournement de la protection Protected Users via Kerberos, et élévation finale au Domain Admin en exploitant un GenericAll sur le contrôleur de domaine lui-même via une chaîne RBCD complète.",
     "difficulty": "medium",
     "platform": "HackSmarter",
-    "readingTime": 17
+    "readingTime": 18
   },
   {
     "isFolder": false,
@@ -110,42 +330,7 @@
     "description": "Pentest Active Directory démarrant d'un partage SMB accessible en écriture par la session anonyme : coercition NTLM via dépôt d'un fichier SCF piégé, découverte d'un contrôle total sur un compte via l'énumération directe des attributs inscriptibles (sans BloodHound), pivot vers une instance MSSQL locale accessible uniquement en loopback via un tunnel Chisel, puis élévation finale à SYSTEM en abusant de SeImpersonatePrivilege sur le compte de service SQL.",
     "difficulty": "medium",
     "platform": "HackSmarter",
-    "readingTime": 13
-  },
-  {
-    "isFolder": false,
-    "slug": "01-bootloader-x86-real-mode",
-    "title": "Partie 1 : Écriture d'un Bootloader 16-bit en Assembleur NASM",
-    "date": "22-08-2026",
-    "tags": [
-      "OS Development",
-      "Assembly x86",
-      "Bootloader",
-      "BIOS",
-      "Real Mode"
-    ],
-    "category": "playbooks",
-    "lang": "fr",
-    "description": "Comprendre le processus d'amorçage du BIOS, le secteur MBR de 512 octets, l'organisation de la mémoire en Real Mode et créer un premier secteur d'amorce exécutable sous QEMU.",
-    "readingTime": 2
-  },
-  {
-    "isFolder": false,
-    "slug": "02-gdt-protected-mode-kernel-c",
-    "title": "Partie 2 : GDT, Passage en Mode Protégé (32 bits) et Kernel C",
-    "date": "22-08-2026",
-    "tags": [
-      "OS Development",
-      "GDT",
-      "Protected Mode",
-      "Kernel",
-      "C",
-      "VGA Memory"
-    ],
-    "category": "playbooks",
-    "lang": "fr",
-    "description": "Configuration de la Global Descriptor Table (GDT), basculement du processeur en mode protégé 32 bits, et lien avec un noyau écrit en C interagissant directement avec la mémoire VGA.",
-    "readingTime": 3
+    "readingTime": 15
   },
   {
     "isFolder": true,
@@ -164,7 +349,6 @@
     "category": "playbooks",
     "lang": "fr",
     "description": "Série de playbooks techniques pas à pas pour concevoir un système d'exploitation à partir de zéro : du Master Boot Record (MBR) au mode protégé 32 bits, la GDT, l'IDT et un noyau minimal en C.",
-    "difficulty": "insane",
     "platform": "Bare Metal / QEMU",
     "readingTime": 0,
     "items": []
@@ -223,7 +407,7 @@
     "description": "Pentest Active Directory complet démarrant d'un simple portail web développeur : injection SQL pour contourner l'authentification, coercition NTLM répétée (upload de fichier puis xp_dirtree MSSQL) pour capturer deux comptes, double chaîne d'abus d'ACL (ForceChangePassword, WriteOwner, GenericAll) cartographiée avec BloodHound, contournement d'une restriction logonHours, restauration d'un compte depuis la corbeille Active Directory, puis élévation finale à l'Administrateur du domaine via un enchaînement ESC3 (Enrollment Agent) et ESC7 (droits CA mal répartis).",
     "difficulty": "medium",
     "platform": "HackSmarter",
-    "readingTime": 25
+    "readingTime": 27
   },
   {
     "isFolder": false,
@@ -275,7 +459,7 @@
     "description": "Pentest Active Directory en scénario assumed breach avec un compte utilisateur standard : Kerberoasting classique pour un premier pivot, cartographie BloodHound d'une chaîne d'ACL GenericAll puis GenericWrite, exploitation d'un Targeted Kerberoasting pour compromettre un compte lié aux certificats, puis élévation à l'Administrateur du domaine via une vulnérabilité ESC1 dont l'authentification Kerberos échoue à cause d'un mot de passe expiré, contournée avec un LDAP Shell authentifié par certificat.",
     "difficulty": "easy",
     "platform": "HackSmarter",
-    "readingTime": 15
+    "readingTime": 16
   },
   {
     "isFolder": false,
@@ -301,7 +485,7 @@
     "description": "Pentest Active Directory en scénario assumed breach avec des credentials de phishing : découverte d'un PDF protégé sur un partage RH révélant le mot de passe par défaut de l'entreprise, password spraying réussi sur un compte, abus d'une double chaîne d'ACL (GenericAll puis ForceChangePassword) cartographiée avec BloodHound, et élévation finale à l'Administrateur du domaine via une vulnérabilité ESC1 sur un template de certificat ADCS.",
     "difficulty": "easy",
     "platform": "HackSmarter",
-    "readingTime": 11
+    "readingTime": 13
   },
   {
     "isFolder": false,
@@ -326,7 +510,7 @@
     "description": "Pentest black-box d'un domaine Active Directory d'une entreprise énergétique : durcissement SMB contourné via énumération d'utilisateurs Kerberos avec Kerbrute, AS-REP Roasting nécessitant une wordlist personnalisée et des règles hashcat, abus d'une chaîne d'ACL (WriteOwner/GenericAll/ForceChangePassword) cartographiée avec BloodHound et exploitée via bloodyAD, puis élévation locale à SYSTEM via SeImpersonatePrivilege et DeadPotato pour une compromission complète.",
     "difficulty": "easy",
     "platform": "CreedCTF",
-    "readingTime": 14
+    "readingTime": 15
   },
   {
     "isFolder": false,
@@ -350,7 +534,7 @@
     "description": "Pentest black-box d'un contrôleur de domaine Active Directory : énumération SMB en session guest, RID Brute Force pour lister les comptes, collecte d'identités via des partages anonymes, ASREPRoast puis Kerberoasting en chaîne pour pivoter entre trois comptes, découverte de credentials dans un script NETLOGON, et élévation finale à l'Administrateur du domaine via DCSync et Pass-the-Hash.",
     "difficulty": "easy",
     "platform": "TryHackMe",
-    "readingTime": 14
+    "readingTime": 15
   },
   {
     "isFolder": false,
@@ -604,7 +788,7 @@
     "description": "Pentest d'un portail de contrôle à accès restreint : contournement du login via injection SQL, récupération du code MFA directement dans la réponse JSON du serveur, élévation du niveau de clearance de level1 à level5 via une attaque JWT alg=none, et déclenchement de l'endpoint de désamorçage.",
     "difficulty": "medium",
     "platform": "Webverse",
-    "readingTime": 9
+    "readingTime": 10
   },
   {
     "isFolder": false,
@@ -627,7 +811,7 @@
     "description": "Pentest d'un salon de tatouage en ligne : découverte d'un sous-domaine admin par virtual host fuzzing, capture d'un token de réinitialisation via Password Reset Poisoning (Host Header Injection), accès au dashboard staff, puis RCE via une SSTI Twig dans le formulaire de prise de rendez-vous.",
     "difficulty": "medium",
     "platform": "Webverse",
-    "readingTime": 10
+    "readingTime": 11
   },
   {
     "isFolder": false,
@@ -674,7 +858,7 @@
     "description": "Pentest interne black box d'un domaine Active Directory : fuite de credentials via un partage SMB accessible aux invités, réutilisation de mot de passe vers un compte Domain Admin, Kerberoasting d'un compte de service et extraction du hash krbtgt via DCSync.",
     "difficulty": "easy",
     "platform": "HackSmarter",
-    "readingTime": 12
+    "readingTime": 13
   },
   {
     "isFolder": false,
@@ -699,7 +883,7 @@
     "description": "Pentest d'un serveur Linux hébergeant un site scam en développement : fuite de credentials via un partage SMB anonyme, décodage, exploitation d'un Arbitrary File Upload sur Subrion CMS 4.2.1 (CVE-2018-19422), récupération du mot de passe WordPress depuis wp-config.php, et lecture du flag root via iconv en sudo NOPASSWD.",
     "difficulty": "easy",
     "platform": "TryHackMe",
-    "readingTime": 10
+    "readingTime": 11
   },
   {
     "isFolder": false,

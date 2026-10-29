@@ -15,8 +15,8 @@
   },
   "home": {
     "hero": {
-      "title": "ZNote - Write the IP, Get the Shell",
-      "description": "_\"The IP whose name is written in this note shall have its shell popped.\"_ \n\nTechnical explorations, lab reports, and threat analysis by **ZCook**. Cybersecurity & AI Master's student, focused on infrastructure and offensive security."
+      "title": "ZNote :: root@w4ln3t:~#",
+      "description": "_\"Write the IP. Get the Shell.\"_\n\nLab reports, exploit analysis, and offensive security writeups focused on penetration testing and infrastructure."
     },
     "categories": {
       "title": "Operation Sectors",
@@ -42,8 +42,8 @@
   },
   "about": {
     "title": "About the author",
-    "description1": "Hi! I'm **ZCook**. Currently a Cybersecurity & AI Master's student at ESATIC, I spend my free time on pentesting, developing smart security tools, and studying modern attack vectors.",
-    "description2": "This blog is my technical logbook: a space where I document my labs, my delirium, and my adventures in the world of offensive security.",
+    "description1": "Hi! I'm **W4ln3t**. Cybersecurity enthusiast and currently a Cybersecurity & AI Master's student, I spend my free time practicing pentesting, building useful tools, and learning on vulnerable environments.",
+    "description2": "This blog is my technical logbook: a space where I document my labs, writeups, and learning notes.",
     "skills": {
       "infra": "Infrastructure",
       "pentest": "Pentest",

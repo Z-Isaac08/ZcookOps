@@ -34,21 +34,35 @@ function CustomBlockquote({ children }: { children?: React.ReactNode }) {
     const alertType = alertMatch[1].toUpperCase();
 
     // Render formatted children without the [!TYPE] marker prefix
+    let cleaned = false;
     const renderCleanChildren = (nodes: React.ReactNode): React.ReactNode => {
+      if (cleaned) return nodes;
+
       if (typeof nodes === 'string') {
-        return nodes.replace(/^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*/i, '');
+        if (/^\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]/i.test(nodes)) {
+          cleaned = true;
+          return nodes.replace(/^\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*/i, '');
+        }
+        if (nodes.trim().length === 0) {
+          return nodes;
+        }
+        cleaned = true;
+        return nodes;
       }
+
       if (Array.isArray(nodes)) {
-        return nodes.map((child, idx) => (idx === 0 ? renderCleanChildren(child) : child));
+        return React.Children.map(nodes, (child) => renderCleanChildren(child));
       }
+
       if (nodes && typeof nodes === 'object' && 'props' in nodes) {
         const element = nodes as any;
-        if (element.props?.children) {
+        if (element.props && 'children' in element.props) {
           return React.cloneElement(element, {
             children: renderCleanChildren(element.props.children),
           });
         }
       }
+
       return nodes;
     };
 
@@ -152,7 +166,7 @@ export function MdxContent({ source }: { source: string }) {
           img: (props: any) => <ZoomableImage {...props} />,
           table: ({ children, ...props }: any) => (
             <div className="my-6 w-full overflow-x-auto rounded-xl border border-border/60 shadow-md">
-              <table className="w-full border-collapse text-sm" {...props}>
+              <table className="w-full m-0! border-0! border-collapse text-sm" {...props}>
                 {children}
               </table>
             </div>
