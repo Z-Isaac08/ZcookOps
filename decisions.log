@@ -108,3 +108,17 @@
 - Fuse.js / client-side search library (rejected: client-side filter is faster and zero-dependency for ~30 posts).
 **Status:** Active
 
+
+
+---
+
+## 2026-10-30 - Review and Quality Pass on Lab Amaterasu Writeup
+
+**Task:** Audit and refine `content/pentest-labs/lab-amaterasu.mdx` (text quality, punctuation, French grammar/conjugation, narrative consistency, and image matching).
+**Decision:**
+- Corrected narrative/screenshot discrepancy: updated text and caption from `/home/alfredo` to `/home` to match screenshot returning `["alfredo"]`.
+- Fixed typos, missing spaces, accents (`tâches`), and verb conjugation (`se rend`).
+- Ensured all descriptive sentences and table cells end with proper punctuation (periods/colons).
+- Enhanced technical accuracy in the remediation table for Tar Wildcard Injection (explicitly mentioning `--` delimiter and `./*` relative pathing).
+- Added explicit root flag terminal block to complement the screenshot and synchronized `content/index.json` difficulty metadata.
+**Status:** Active

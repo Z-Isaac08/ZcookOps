@@ -1,6 +1,32 @@
 [
   {
     "isFolder": false,
+    "slug": "lab-amaterasu",
+    "title": "Lab Amaterasu : Arbitrary File Write via REST API et Tar Wildcard Injection",
+    "date": "29-10-2026",
+    "tags": [
+      "Linux",
+      "OffSec",
+      "Proving Grounds",
+      "FTP",
+      "REST API",
+      "Path Traversal",
+      "Arbitrary File Write",
+      "File Upload",
+      "SSH Key Injection",
+      "Crontab",
+      "Tar Wildcard Injection",
+      "Privilege Escalation"
+    ],
+    "category": "pentest-labs",
+    "lang": "fr",
+    "description": "Machine Linux OffSec PG : une API REST Python expose un endpoint d'upload sans validation du chemin de destination, permettant d'écrire une clé SSH arbitraire dans le dossier d'un utilisateur. Après accès SSH, un script crontab root exécute tar avec un wildcard sur un répertoire contrôlable, permettant une Tar Wildcard Injection pour élever les privilèges jusqu'à root.",
+    "difficulty": "medium",
+    "platform": "OffSec Proving Grounds",
+    "readingTime": 13
+  },
+  {
+    "isFolder": false,
     "slug": "lab-cap",
     "title": "Lab Cap : IDOR sur PCAP et Privilege Escalation via cap_setuid",
     "date": "25-10-2026",
